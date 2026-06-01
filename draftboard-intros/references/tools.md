@@ -72,9 +72,9 @@ Returns `{ total, counted, byStatus{}, byTag{}, truncated }`.
 | `set_connector_preferred` ⚠ | `connectorId, preferred (bool)` | Star/unstar a supporter. |
 | `set_connector_excluded` ⚠ | `connectorId, excluded (bool)` | Exclude/un-exclude a connector. |
 | `import_supporters` ⚠ | `linkedinUrls (1–100)` | Add supporters by URL. |
-| `attach_tags_to_targets` ⚠ | `targetIds (1+), tagIds?, tagNames?` | Tag one/many targets; all-or-nothing. |
+| `attach_tags_to_targets` ⚠ | `targetIds (1+)`, and ≥1 of `tagIds` / `tagNames` | Tag one/many targets; all-or-nothing. |
 | `set_intro_status` ⚠ | `introId, status (requested\|completed\|declined), reasonId?, customReason?` | Drive an intro's lifecycle. |
-| `archive_target` ⚠ | `targetId` | Soft-delete a target — **not reversible** via the API. Confirm first. |
+| `archive_target` ⚠ | `targetId, confirm (must be true)` | Soft-delete a target — **not reversible** via the API. Requires `confirm: true`; confirm with the user first. |
 
 **Field notes.** Raw API targets carry `score` (best path, 0–100), `connectionsNumber`, and
 `degree` (`"1st"`/`"2nd"`). Raw connections carry `score` (0–100), `scoreDetails` (shared-history
