@@ -46,6 +46,32 @@ offers to dig deeper. It won't pretend it searched everything when it didn't.
 
 ---
 
+## How to use it
+
+You don't drive the tools — you describe the **job** and let the assistant choose the moves. The
+skill is what makes that reliable.
+
+- **Talk in outcomes, not commands.** "Who should I reach out to at fintech companies this week?"
+  works better than naming a tool. The skill maps your goal to the right action.
+- **Be specific when it helps it narrow.** A tag, a company, a status ("only ones I haven't started
+  yet"), or a teammate's name lets it focus and gives you a tighter, faster answer.
+- **Trust the coverage line.** On a big list it works the strongest candidates first and tells you
+  what it covered. If it says "top 25 of 142," ask it to go wider or add a filter — don't assume the
+  rest are empty.
+- **Reading is free; changing asks first.** Looking things up (best paths, who's connected, status)
+  happens instantly. Anything that *changes* your Draftboard data — starring a connector, tagging,
+  moving an intro's status, importing people — the assistant proposes and waits for your go-ahead.
+  One action, archiving a target, is irreversible and needs an explicit confirm.
+- **Take its limits at face value.** When something isn't possible through the API (e.g. generating
+  a target list from a written ICP), it will say so and offer the closest real workaround rather than
+  inventing an answer.
+
+A good first session: *"Use Draftboard to show me my top warm intros this week, tell me which I'm
+already connected to, and draft a warm opener for the best one."* — one sentence, three jobs, and it
+sequences them for you.
+
+---
+
 ## Getting started (one-time, ~5 minutes)
 
 You need a Draftboard account with API access (Team plan for full read/write; Pro is read-only) and
