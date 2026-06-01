@@ -59,6 +59,22 @@ Returns `{ total, counted, byStatus{}, byTag{}, truncated }`.
 | `list_targets` | `updatedSince?, tagIds?, tagNames?, statuses?, pageNumber?, resultPerPage?` | `{ targets[], count, nextPage }` |
 | `import_targets` | `linkedinUrls (required), tags?` | import result |
 | `get_target_connections` | `targetId (required), updatedSince?, ownerIds?, pageNumber?, resultPerPage?` | `{ connections[], count, nextPage }` |
+| `list_accounts` | `query?, connectionDegree?, pageNumber?, resultPerPage?` | `{ accounts[ {name, targetsCount, firstDegreeCount, secondDegreeCount, pathsCount} ], count, nextPage }` |
+
+## Extended tools (rest of the API)
+
+⚠ = changes data; the host approves each call at runtime.
+
+| Tool | Args | Notes |
+|------|------|-------|
+| `list_supporters` | `query?, preferred?, pageNumber?, resultPerPage?` | Closest/preferred connectors. `preferred:true` = starred only, `false` = non-starred, omit = full network. |
+| `get_connector_intros` | `connectorId (required), pageNumber?, resultPerPage?` | Connector-first: who this person can introduce you to. `connectorId` = a connection's `connectorId` (not its `id`) or a supporter's `id`. |
+| `set_connector_preferred` ⚠ | `connectorId, preferred (bool)` | Star/unstar a supporter. |
+| `set_connector_excluded` ⚠ | `connectorId, excluded (bool)` | Exclude/un-exclude a connector. |
+| `import_supporters` ⚠ | `linkedinUrls (1–100)` | Add supporters by URL. |
+| `attach_tags_to_targets` ⚠ | `targetIds (1+), tagIds?, tagNames?` | Tag one/many targets; all-or-nothing. |
+| `set_intro_status` ⚠ | `introId, status (requested\|completed\|declined), reasonId?, customReason?` | Drive an intro's lifecycle. |
+| `archive_target` ⚠ | `targetId` | Soft-delete a target — **not reversible** via the API. Confirm first. |
 
 **Field notes.** Raw API targets carry `score` (best path, 0–100), `connectionsNumber`, and
 `degree` (`"1st"`/`"2nd"`). Raw connections carry `score` (0–100), `scoreDetails` (shared-history

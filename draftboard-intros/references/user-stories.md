@@ -3,16 +3,17 @@
 How to solve each documented customer pain with the Draftboard MCP. ✅ = supported today,
 🟡 = partial / workaround, 🚧 = not yet exposed by the Integration API (roadmap).
 
-### 1. ✅🟡 Map paths through specific people who I know will intro for me
-Run `find_top_paths`. If "specific people" are **teammates**, pass their `ownerIds` (from `get_me`).
-If they're **named connectors** (not team members), the API can't filter by connector name — run
-`find_top_paths`, then filter the returned opportunities client-side on the `connector` field and
-say you did. Raise `minRank` to keep only strong paths.
+### 1. ✅ Map paths through specific people who I know will intro for me
+For a **named connector**, get their connector id (the `connectorId` on a connection, or a
+supporter's id) and call `get_connector_intros` — it lists exactly who that person can introduce you
+to, with scores and shared-history reasons. For **teammates**, use `find_top_paths` with their
+`ownerIds`.
 
-### 2. 🚧 I have target accounts (companies) but no people — find intros to those accounts
-The Integration API has no company/account search. Workaround: identify specific people at those
-companies (LinkedIn), `import_targets` their profile URLs, then `find_top_paths`. Tell the user
-account-level discovery lives in the Draftboard app today.
+### 2. 🟡 I have target accounts (companies) but no people — find intros to those accounts
+`list_accounts` gives an account-level view — every company where you have targets, with how many
+are 1st-/2nd-degree reachable — and you can filter targets to one company. It does **not** discover
+*new* people at a company you don't yet track: for that, add specific people (`import_targets` their
+LinkedIn URLs) then `find_top_paths`. Company-first prospecting lives in the Draftboard app.
 
 ### 3. 🚧 Build a target list from my ICP description
 ICP-based target generation (auto-prospecting) isn't exposed via the Integration API. Workaround:
@@ -29,15 +30,15 @@ Draftboard org with their networks already scanned.
 the `owners[].id` field on connections (run `find_top_paths` once unfiltered, or
 `get_target_connections`, and read the owner names/ids) — they are not in `get_me`.
 
-### 6. 🟡 Exclude connections I'm not close enough to ask
-No server-side exclude in the Integration API. Workaround: raise `minRank` and/or filter the
-returned opportunities client-side to drop specific connectors. Persistent supporter/exclude
-preferences are managed in the app.
+### 6. ✅ Exclude connections I'm not close enough to ask
+`set_connector_excluded` with the connector's id (`excluded: true`) permanently drops that connector
+from warm-path results; `excluded: false` undoes it. (WRITE — the host approves the call.)
 
-### 7. 🟡 Mark my closest connections and only see paths through them
-Marking "supporters" (preferred connectors) isn't writable via the Integration API. Workaround:
-approximate "closest" with a high `minRank`, and use `ownerIds` if the close relationships are
-through specific teammates. True supporter marking is done in the app.
+### 7. ✅ Mark my closest connections and only see paths through them
+`set_connector_preferred` (`preferred: true`) stars a connector as a supporter; `list_supporters`
+shows your starred set (`preferred: true`) or full network. Preferred connectors are prioritized in
+ranking, so "only see paths through my closest" ≈ work from `list_supporters` / star the ones you
+trust. (WRITE — host-approved.)
 
 ### 8. ✅ Am I already connected to the prospects I upload?
 `check_if_connected` with the LinkedIn URLs. Returns per-URL `directlyConnected` (true when you/a
@@ -53,13 +54,15 @@ case — keep it scoped with `tagNames`/`minTargetMaxRank` on large lists.
 weave a real `rankDetails` fact ("you both worked at Apalon") into the opener. Only use facts the
 tool actually returned.
 
-### 11. ✅ Track the status of requested intros
-`intro_status_overview` → counts of `new` / `completed` / `stopped`, optionally per tag. Scope with
-`tagNames` to a campaign.
+### 11. ✅ Track and update the status of requested intros
+`intro_status_overview` → counts of `new` / `completed` / `stopped`, optionally per tag. You can also
+**drive** an intro's lifecycle with `set_intro_status` (`requested` → `completed` / `declined`, with
+an optional decline reason). (WRITE — host-approved.)
 
-### 12. 🚧 History of my intro requests to a given connection (last asked, hit rate, responsiveness)
-Per-connector intro history/analytics isn't exposed by the Integration API. Roadmap. Today you can
-only report current target status (story 11), not historical request outcomes per connector.
+### 12. 🟡 History of my intro requests to a given connection (last asked, hit rate, responsiveness)
+`get_connector_intros` shows the current connector-first view — everyone a given connector can
+introduce you to. But per-connector **history/analytics** (last asked, response rate, hit rate) is
+not exposed by the Integration API — that remains a roadmap item.
 
 ---
 

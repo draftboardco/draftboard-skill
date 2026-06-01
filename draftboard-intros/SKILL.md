@@ -32,8 +32,16 @@ know how complete the answer is. Drop to **thin tools** only when no outcome too
 | Whether they're already connected to people (by LinkedIn URL) | `check_if_connected` |
 | Progress of intros (new / completed / stopped) | `intro_status_overview` |
 | Cold email that name-drops a mutual connection | `find_top_paths` (`includeRankDetails: true`), use `rankDetails` |
+| Who can a specific connector introduce me to? | `get_connector_intros` (connector-first) |
+| Mark / list my closest connections (supporters) | `set_connector_preferred`, `list_supporters` |
+| Hide connections I'd never ask | `set_connector_excluded` |
+| Account-level view (companies with targets) | `list_accounts` |
+| Move an intro forward (sent / made / declined) | `set_intro_status` |
 | Raw target / connection / tag data | `list_targets`, `get_target_connections`, `list_tags` |
-| Add new people to track | `import_targets` |
+| Add new people / supporters to track | `import_targets`, `import_supporters` |
+
+Tools marked WRITE change Draftboard data; the host approves each call, but still confirm
+destructive ones (`archive_target` is **not reversible**) with the user first.
 
 The full 12-pain playbook — including the jobs the Integration API does **not** yet support and the
 closest workarounds — is in `references/user-stories.md`. The tool catalog with arguments is in
