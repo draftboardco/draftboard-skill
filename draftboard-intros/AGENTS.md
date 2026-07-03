@@ -27,6 +27,7 @@ Prefer outcome tools; fall back to thin tools only when needed.
 - Already connected? (LinkedIn URLs) → `check_if_connected`
 - Intro progress → `intro_status_overview`
 - Cold-email name-drop → `find_top_paths` with `includeRankDetails: true`, use `rankDetails`
+- Scoped to a company (my leads / best intros at company X) → `list_accounts` (name→`id`), then `list_targets` / `find_top_paths` with `accountId`
 - Raw data / new people → `list_targets`, `get_target_connections`, `list_tags`, `import_targets`
 
 Full playbook: `references/user-stories.md`. Tool arguments: `references/tools.md`.
@@ -40,7 +41,15 @@ Full playbook: `references/user-stories.md`. Tool arguments: `references/tools.m
    the API only filters by team member (`ownerIds`).
 4. After import/connection checks, treat `isTarget:false` / `hasPaths:false` as "not ready yet"
    (async enrichment), not "no path".
-5. Name-drop only real `rankDetails`; never fabricate a shared connection.
+5. Name-drop only real `rankDetails` — and `rankDetails` is the **connector↔target** shared history
+   (why that connector can intro that target), **not** the user's background or the user↔connector
+   tie. Never attribute it to the user; never fabricate a shared connection.
+6. Company questions: scope via `accountId` (resolve the company with `list_accounts`) instead of
+   scanning the full target list — `find_top_paths` scans only a bounded top-N, so a company's
+   lower-ranked / 2nd-degree targets can otherwise be missed.
+7. Use only these tools. If a request isn't possible with them, say so and stop (or point to the
+   app) — never run raw API calls, read API keys from config/files, query a database, brute-force by
+   paging thousands of records, or import people as targets to answer a question without approval.
 
 ## Output
 

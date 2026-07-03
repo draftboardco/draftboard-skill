@@ -12,6 +12,7 @@ strongest connectors. **Expensive** (walks connections per target) — scope it.
 | Arg | Default | Notes |
 |-----|---------|-------|
 | `tagNames` | — | Only targets with these tags |
+| `accountId` | — | Only targets at one company (an id from `list_accounts`) — scopes "best intros" to that company |
 | `ownerIds` | — | Only paths through these team members (from `get_me`) |
 | `statuses` | `["new"]` | `new` / `completed` / `stopped` |
 | `minTargetMaxRank` | `0` | Skip weakly-reachable targets |
@@ -56,10 +57,12 @@ Returns `{ total, counted, byStatus{}, byTag{}, truncated }`.
 |------|------|---------|
 | `get_me` | — | `{ customer{ id, name, user{ id, firstName, lastName, linkedinUrl } } }` |
 | `list_tags` | `query?, type?, pageNumber?, resultPerPage?` | `{ tags[], count, nextPage }` |
-| `list_targets` | `updatedSince?, tagIds?, tagNames?, statuses?, pageNumber?, resultPerPage?` | `{ targets[], count, nextPage }` |
+| `list_targets` | `updatedSince?, tagIds?, tagNames?, statuses?, accountId?, pageNumber?, resultPerPage?` | `{ targets[], count, nextPage }` — `accountId` filters to one company (id from `list_accounts`) |
 | `import_targets` | `linkedinUrls (required), tags?` | import result |
 | `get_target_connections` | `targetId (required), updatedSince?, ownerIds?, pageNumber?, resultPerPage?` | `{ connections[], count, nextPage }` |
-| `list_accounts` | `query?, connectionDegree?, pageNumber?, resultPerPage?` | `{ accounts[ {name, targetsCount, firstDegreeCount, secondDegreeCount, pathsCount} ], count, nextPage }` |
+| `list_accounts` | `query?, connectionDegree?, pageNumber?, resultPerPage?` | `{ accounts[ {id, name, targetsCount, firstDegreeCount, secondDegreeCount, pathsCount} ], count, nextPage }`. Company search: pass a company name as `query`, take the account `id` from the result. |
+
+**Scope by company (the drill).** To answer "who do I have at company X" or "best intros to my targets at company X", do NOT page the whole target list. Resolve the company first: `list_accounts` with `query: "<company name>"` → take the `id` → then `list_targets` with `accountId` (the saved leads there) or `find_top_paths` with `accountId` (the ranked intro opportunities there). Two calls, not 45 pages.
 
 ## Extended tools (rest of the API)
 
@@ -81,3 +84,9 @@ Returns `{ total, counted, byStatus{}, byTag{}, truncated }`.
 reasons), and `owners` (team members who can make the intro — each with their own `score` and an
 `id` you can pass as `ownerIds`). The outcome tools normalize these into `rank`/`rankDetails`/
 `targetMaxRank` in their output. Pagination: loop pages until `nextPage` is `0`.
+
+**Whose history is `scoreDetails`/`rankDetails`?** They explain why **that connector** can introduce
+**that target** — they describe the **connector↔target** pair, **not** the user's background and not
+the user↔connector relationship. Use them only for the warm line about that specific intro; never
+present them as facts about the user. The teammate↔connector tie (`owners[].score`) is a strength
+number only — no shared-history reason is exposed for it, so don't invent one.

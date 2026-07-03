@@ -36,6 +36,8 @@ know how complete the answer is. Drop to **thin tools** only when no outcome too
 | Mark / list my closest connections (supporters) | `set_connector_preferred`, `list_supporters` |
 | Hide connections I'd never ask | `set_connector_excluded` |
 | Account-level view (companies with targets) | `list_accounts` |
+| My saved leads at a specific company | `list_accounts` (name→`id`), then `list_targets` with `accountId` |
+| Best intros to my targets at a specific company | `list_accounts` (name→`id`), then `find_top_paths` with `accountId` |
 | Move an intro forward (sent / made / declined) | `set_intro_status` |
 | Raw target / connection / tag data | `list_targets`, `get_target_connections`, `list_tags` |
 | Add new people / supporters to track | `import_targets`, `import_supporters` |
@@ -50,9 +52,19 @@ closest workarounds — is in `references/user-stories.md`. The tool catalog wit
 ## How to work
 
 - **Scope expensive tools.** `find_top_paths` walks each target's connections. Always narrow with
-  `tagNames`, `statuses`, `minTargetMaxRank`, or `ownerIds` before running on a big account. If the
-  returned `telemetry.truncated` is true, tell the user the result is partial and follow
-  `telemetry.nextSuggestedFilter`.
+  `tagNames`, `statuses`, `minTargetMaxRank`, `ownerIds`, or `accountId` before running on a big
+  account. If the returned `telemetry.truncated` is true, tell the user the result is partial and
+  follow `telemetry.nextSuggestedFilter`.
+- **Company questions → scope by `accountId`, don't scan.** For "who do I have at company X" or
+  "best intros at company X", resolve the company with `list_accounts` (name → `id`) and pass
+  `accountId` to `list_targets` / `find_top_paths`. `find_top_paths` only scans a bounded top-N of
+  targets by rank, so a company's lower-ranked or 2nd-degree targets can otherwise be missed
+  entirely — the `accountId` scope avoids both the miss and the slow full scan.
+- **Stay inside these tools.** They are the only sanctioned way to reach Draftboard. If a request
+  isn't possible with them, say so plainly and stop (or point to the app) — never run raw API
+  calls, read API keys from config/files, query a database, or brute-force by paging thousands of
+  records. Don't import people as targets just to answer an exploratory question (that changes the
+  user's data) without explicit approval.
 - **Be honest about coverage.** Always surface counts from `telemetry` (e.g. "scanned the top 25 of
   142 targets"). Never imply you searched everything when you didn't.
 - **Connector by name (e.g. "paths through Jane Smith").** The API filters connections by team
@@ -61,8 +73,11 @@ closest workarounds — is in `references/user-stories.md`. The tool catalog wit
 - **Newly imported people need time.** After `import_targets` / `check_if_connected`, enrichment and
   path scoring are asynchronous — if a person shows `isTarget: false` or `hasPaths: false`
   immediately, tell the user to re-check shortly rather than concluding there's no path.
-- **Name-drop responsibly.** Use a connector's `rankDetails` (shared history) for the warm line, but
-  only mention real, returned facts — never invent a shared connection.
+- **Name-drop responsibly.** A connector's `rankDetails` (shared history) describes the
+  **connector↔target** relationship — why *that* connector can introduce *that* target. It is **not**
+  the user's own background and not the user↔connector history. Use it for the warm line about that
+  specific intro, mention only real returned facts, and never present it as a fact about the user or
+  invent a shared connection. (The teammate↔connector tie is a bare score with no reason exposed.)
 
 ## Output
 
