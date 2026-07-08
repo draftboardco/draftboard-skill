@@ -8,8 +8,9 @@ access (Pro is read-only; Team adds read/write — needed for `import_targets`).
 
 ## 2. Install the MCP server
 
-The skill talks to Draftboard only through the `@draftboard/mcp` server. No global install needed —
-`npx` fetches it on demand. Requires Node.js 20+.
+The skill talks to Draftboard only through the `@draftboard/mcp` server. During the beta it runs
+straight from the GitHub repo, so `npx` fetches it on demand — no npm package, no global install.
+Requires Node.js 20+.
 
 ### Claude Code / Claude Desktop
 
@@ -20,7 +21,7 @@ Add to `.mcp.json` (project) or `claude_desktop_config.json`:
   "mcpServers": {
     "draftboard": {
       "command": "npx",
-      "args": ["-y", "@draftboard/mcp"],
+      "args": ["-y", "github:draftboardco/mcp"],
       "env": { "DRAFTBOARD_API_KEY": "db-api_xxxx" }
     }
   }
@@ -29,7 +30,7 @@ Add to `.mcp.json` (project) or `claude_desktop_config.json`:
 
 ### Codex
 
-Add the same server to your Codex MCP configuration (`command: npx`, `args: ["-y","@draftboard/mcp"]`,
+Add the same server to your Codex MCP configuration (`command: npx`, `args: ["-y","github:draftboardco/mcp"]`,
 `env.DRAFTBOARD_API_KEY`).
 
 ## 3. Install the skill

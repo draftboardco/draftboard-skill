@@ -26,9 +26,9 @@ each path comes from. Filter by `ownerIds` to focus on specific teammates. They 
 Draftboard org with their networks already scanned.
 
 ### 5. ✅ Map paths through my colleagues' networks (mine is weak)
-`find_top_paths` with `ownerIds` set to your colleagues' team member ids. Discover those ids from
-the `owners[].id` field on connections (run `find_top_paths` once unfiltered, or
-`get_target_connections`, and read the owner names/ids) — they are not in `get_me`.
+`find_top_paths` with `ownerIds` set to your colleagues' team member ids. Get those ids from `get_me`
+— `customer.teamMembers[]` is the roster, each with a name and the `id` you pass as `ownerIds`.
+(Connections also carry an `owners[]` list showing which teammates can make a given intro.)
 
 ### 6. ✅ Exclude connections I'm not close enough to ask
 `set_connector_excluded` with the connector's id (`excluded: true`) permanently drops that connector

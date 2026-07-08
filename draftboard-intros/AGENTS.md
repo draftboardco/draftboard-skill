@@ -12,10 +12,10 @@ scored 0–100 by **rank**.
 ## Setup check
 
 - Ensure the Draftboard MCP tools are registered. If not, see `references/setup.md`
-  (install `@draftboard/mcp`, set `DRAFTBOARD_API_KEY` in the MCP server config).
-- Call `get_me` first to confirm the account (`customer.name`/`customer.user`). Team-member ids for
-  `ownerIds` come from `owners[].id` on connections (e.g. `find_top_paths` / `get_target_connections`
-  output), not from `get_me`.
+  (install `github:draftboardco/mcp`, set `DRAFTBOARD_API_KEY` in the MCP server config).
+- Call `get_me` first to confirm the account (`customer.name`/`customer.user`). The team roster is
+  here too — for "through my teammate" requests, match the name in `customer.teamMembers[]` and pass
+  their `id` as `ownerIds`.
 - Never echo the API key or ask the user to paste it.
 
 ## Tool selection

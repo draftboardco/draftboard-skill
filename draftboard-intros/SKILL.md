@@ -13,11 +13,10 @@ scored 0–100 by **rank**.
 ## Before anything else
 
 1. Confirm the MCP server is available. If its tools are missing, point the user to
-   `references/setup.md` (install `@draftboard/mcp`, set `DRAFTBOARD_API_KEY`).
-2. Call **`get_me`** once to confirm whose account this is (`customer.name` / `customer.user`).
-   Team-member ids for "through my teammate" requests (`ownerIds`) are **not** in `get_me` — they
-   come from the `owners[].id` on connections (e.g. from `find_top_paths` output or
-   `get_target_connections`).
+   `references/setup.md` (install `github:draftboardco/mcp`, set `DRAFTBOARD_API_KEY`).
+2. Call **`get_me`** once to confirm whose account this is (`customer.name` / `customer.user`). For
+   "through my teammate" requests, the team roster is here too: match the teammate's name in
+   `customer.teamMembers[]` and pass their `id` as `ownerIds`.
 3. **Never** print or ask the user to paste their API key in chat; it lives in the MCP env block.
 
 ## Pick the right tool

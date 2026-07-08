@@ -4,6 +4,9 @@ Ask your AI assistant *"who can introduce me to the VP of Sales at Acme?"* and g
 drawn from your own Draftboard network — the warm path, who can make the intro, and why they'll say
 yes. No dashboards, no exports, no clicking around. You ask; it works the network for you.
 
+> **New here?** Jump to [Getting started](#getting-started-one-time-5-minutes) — you'll be running in
+> ~5 minutes. This is an early beta; if anything breaks or reads wrong, [tell us](#feedback--support).
+
 This package is two pieces that work together:
 
 - **The skill** — the know-how that teaches your assistant *how* to use Draftboard well: which
@@ -75,7 +78,20 @@ sequences them for you.
 ## Getting started (one-time, ~5 minutes)
 
 You need a Draftboard account with API access (Team plan for full read/write; Pro is read-only) and
-your API key from **Settings → API keys**.
+your API key from **Settings → API keys** — it looks like `db-api_…`.
+
+**The easy way — let Claude set it up for you.** No config files, no terminal. In
+[Claude Code](https://claude.com/claude-code), paste one message:
+
+> **Set up the Draftboard intros MCP and skill from
+> https://github.com/draftboardco/draftboard-skill — my API key is `db-api_your_key_here`.**
+
+Claude follows the [setup steps for your assistant](#setup-for-your-assistant) below — it adds the
+connector, installs the skill, and confirms it works. When it says it's ready, ask:
+*"Use Draftboard to show me my top intro opportunities."* That's the whole setup.
+
+<details>
+<summary>Prefer to set it up by hand (or on Claude Desktop / Codex)?</summary>
 
 **1. Connect your assistant to Draftboard.** Add this to your assistant's tool configuration
 (Claude Code `.mcp.json`, Claude Desktop config, or the Codex equivalent), pasting your key:
@@ -85,20 +101,39 @@ your API key from **Settings → API keys**.
   "mcpServers": {
     "draftboard": {
       "command": "npx",
-      "args": ["-y", "@draftboard/mcp"],
+      "args": ["-y", "github:draftboardco/mcp"],
       "env": { "DRAFTBOARD_API_KEY": "db-api_your_key_here" }
     }
   }
 }
 ```
 
-**2. Add the skill.** Copy the `draftboard-intros/` folder into your assistant's skills directory
-(Claude), or point Codex at `draftboard-intros/AGENTS.md`.
+**2. Add the skill.** Copy the `draftboard-intros/` folder into your assistant's skills directory —
+for Claude Code, `~/.claude/skills/`; for Codex, point it at `draftboard-intros/AGENTS.md`.
 
-**3. Try it.** Ask: *"Use Draftboard to show me my top intro opportunities."* You're done.
+**3. Try it.** Ask: *"Use Draftboard to show me my top intro opportunities."*
+
+</details>
 
 Full setup detail (environment options, verifying it works, switching between accounts) lives in
 [`draftboard-intros/references/setup.md`](./draftboard-intros/references/setup.md).
+
+## Setup (for your assistant)
+
+*If you're an AI assistant that a user asked to "set up Draftboard" from this repo, do exactly this,
+then stop and tell them it's ready:*
+
+1. **Add the MCP server.** Configure a stdio MCP server named `draftboard` in the user's client
+   (Claude Code `.mcp.json`, Claude Desktop config, etc.): command `npx`, args
+   `["-y", "github:draftboardco/mcp"]`, env `DRAFTBOARD_API_KEY` = the key the user gave you. Use your
+   MCP-add command or edit the config file directly. **Never print the key back to the user.**
+2. **Install the skill.** Copy the `draftboard-intros/` folder from this repo into the user's skills
+   directory (`~/.claude/skills/draftboard-intros/` for Claude Code). If you don't have the files
+   locally, clone `https://github.com/draftboardco/draftboard-skill` first.
+3. **Verify.** Restart the client if the tools aren't loaded yet, then call the `get_me` tool. If it
+   returns the user's name, tell them setup worked and suggest *"Use Draftboard to show me my top
+   intro opportunities."* If the tools are missing → the client needs a restart; if you get `401` →
+   the API key is wrong or expired.
 
 ---
 
@@ -136,4 +171,14 @@ except to Draftboard's own API. Nothing about your network is sent to any third 
 - Working an ideal-customer push → [Using Draftboard intros for your ICP](./using-draftboard-for-icp.md).
 - Curious what each capability does → the [playbook](./draftboard-intros/references/user-stories.md).
 - Building on top of it → the engine and its full tool list:
-  [`@draftboard/mcp`](https://www.npmjs.com/package/@draftboard/mcp).
+  [`@draftboard/mcp`](https://github.com/draftboardco/mcp).
+
+---
+
+## Feedback & support
+
+This is an early beta, and your reports shape it directly. If setup snags or an answer looks off,
+open an issue at
+**[github.com/draftboardco/draftboard-skill/issues](https://github.com/draftboardco/draftboard-skill/issues)**
+— tell us what you asked, what the assistant did, and the coverage line it showed. That's usually
+enough for us to reproduce.

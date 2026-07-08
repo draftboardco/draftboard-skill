@@ -13,7 +13,7 @@ strongest connectors. **Expensive** (walks connections per target) — scope it.
 |-----|---------|-------|
 | `tagNames` | — | Only targets with these tags |
 | `accountId` | — | Only targets at one company (an id from `list_accounts`) — scopes "best intros" to that company |
-| `ownerIds` | — | Only paths through these team members (from `get_me`) |
+| `ownerIds` | — | Only paths through these team members — ids from `get_me.customer.teamMembers[]` (match by name) |
 | `statuses` | `["new"]` | `new` / `completed` / `stopped` |
 | `minTargetMaxRank` | `0` | Skip weakly-reachable targets |
 | `minRank` | `0` | Drop weak connectors |
@@ -55,7 +55,7 @@ Returns `{ total, counted, byStatus{}, byTag{}, truncated }`.
 
 | Tool | Args | Returns |
 |------|------|---------|
-| `get_me` | — | `{ customer{ id, name, user{ id, firstName, lastName, linkedinUrl } } }` |
+| `get_me` | — | `{ customer{ id, name, user{ id, firstName, lastName, linkedinUrl }, teamMembers[]{ id, firstName, lastName, linkedinUrl } } }` — `teamMembers[].id` is a valid `ownerIds` value |
 | `list_tags` | `query?, type?, pageNumber?, resultPerPage?` | `{ tags[], count, nextPage }` |
 | `list_targets` | `updatedSince?, tagIds?, tagNames?, statuses?, accountId?, pageNumber?, resultPerPage?` | `{ targets[], count, nextPage }` — `accountId` filters to one company (id from `list_accounts`) |
 | `import_targets` | `linkedinUrls (required), tags?` | import result |
