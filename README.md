@@ -4,6 +4,9 @@ Ask your AI assistant *"who can introduce me to the VP of Sales at Acme?"* and g
 drawn from your own Draftboard network — the warm path, who can make the intro, and why they'll say
 yes. No dashboards, no exports, no clicking around. You ask; it works the network for you.
 
+Built on **[Draftboard](https://draftboard.com)** — the warm-introduction platform that maps how your
+team is really connected to your prospects.
+
 > **New here?** Jump to [Getting started](#getting-started-one-time-5-minutes) — you'll be running in
 > ~5 minutes. This is an early beta; if anything breaks or reads wrong, [tell us](#feedback--support).
 
@@ -77,8 +80,9 @@ sequences them for you.
 
 ## Getting started (one-time, ~5 minutes)
 
-You need a Draftboard account with API access (Team plan for full read/write; Pro is read-only) and
-your API key from **Settings → API keys** — it looks like `db-api_…`. You'll also need
+You need a [Draftboard](https://draftboard.com) account with API access (Team plan for full
+read/write; Pro is read-only) and your API key from **Settings → API keys** in the
+[Draftboard app](https://intros.draftboard.com) — it looks like `db-api_…`. You'll also need
 [Claude Code](https://claude.com/claude-code) and **Node.js 20+** — Node is what provides the `npx`
 that runs the connector, so grab it at [nodejs.org](https://nodejs.org) if you don't have it.
 
@@ -177,6 +181,8 @@ except to Draftboard's own API. Nothing about your network is sent to any third 
 - Curious what each capability does → the [playbook](./draftboard-intros/references/user-stories.md).
 - Building on top of it → the engine and its full tool list:
   [`@draftboard/mcp`](https://github.com/draftboardco/mcp).
+- The Draftboard Integration API itself → <https://intros.draftboard.com/api>.
+- About Draftboard → [draftboard.com](https://draftboard.com).
 
 ---
 
