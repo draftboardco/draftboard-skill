@@ -10,7 +10,8 @@ access (Pro is read-only; Team adds read/write — needed for `import_targets`).
 
 The skill talks to Draftboard only through the `@draftboard/mcp` server. During the beta it runs
 straight from the GitHub repo, so `npx` fetches it on demand — no npm package, no global install.
-Requires Node.js 20+.
+Requires **Node.js 20+** — install the LTS from [nodejs.org](https://nodejs.org) if you don't have it
+(it provides `npx`).
 
 ### Claude Code / Claude Desktop
 

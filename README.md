@@ -78,7 +78,9 @@ sequences them for you.
 ## Getting started (one-time, ~5 minutes)
 
 You need a Draftboard account with API access (Team plan for full read/write; Pro is read-only) and
-your API key from **Settings → API keys** — it looks like `db-api_…`.
+your API key from **Settings → API keys** — it looks like `db-api_…`. You'll also need
+[Claude Code](https://claude.com/claude-code) and **Node.js 20+** — Node is what provides the `npx`
+that runs the connector, so grab it at [nodejs.org](https://nodejs.org) if you don't have it.
 
 **The easy way — let Claude set it up for you.** No config files, no terminal. In
 [Claude Code](https://claude.com/claude-code), paste one message:
@@ -123,6 +125,9 @@ Full setup detail (environment options, verifying it works, switching between ac
 *If you're an AI assistant that a user asked to "set up Draftboard" from this repo, do exactly this,
 then stop and tell them it's ready:*
 
+0. **Check Node is installed.** Run `npx --version` (the server needs Node.js 20+). If it's missing,
+   tell the user to install Node from <https://nodejs.org> and stop until they have — nothing runs
+   without it.
 1. **Add the MCP server.** Configure a stdio MCP server named `draftboard` in the user's client
    (Claude Code `.mcp.json`, Claude Desktop config, etc.): command `npx`, args
    `["-y", "github:draftboardco/mcp"]`, env `DRAFTBOARD_API_KEY` = the key the user gave you. Use your
