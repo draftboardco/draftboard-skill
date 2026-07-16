@@ -28,6 +28,7 @@ Prefer outcome tools; fall back to thin tools only when needed.
 - Intro progress → `intro_status_overview`
 - Cold-email name-drop → `find_top_paths` with `includeRankDetails: true`, use `rankDetails`
 - Scoped to a company (my leads / best intros at company X) → `list_accounts` (name→`id`), then `list_targets` / `find_top_paths` with `accountId`
+- Find NEW people by role at named companies (company-first, BETA) → `search_accounts` → wait → `list_pool` → `confirm_pool`
 - Raw data / new people → `list_targets`, `get_target_connections`, `list_tags`, `import_targets`
 
 Full playbook: `references/user-stories.md`. Tool arguments: `references/tools.md`.
@@ -50,6 +51,15 @@ Full playbook: `references/user-stories.md`. Tool arguments: `references/tools.m
 7. Use only these tools. If a request isn't possible with them, say so and stop (or point to the
    app) — never run raw API calls, read API keys from config/files, query a database, brute-force by
    paging thousands of records, or import people as targets to answer a question without approval.
+8. Tagging/describing connectors or supporters: don't invent a backstory. The tools return a
+   connector's name, LinkedIn URL, position, `rank`, and (for an intro) `rankDetails` — **not** their
+   bio, seniority, or background. Use only user-provided facts or returned fields; never infer whose
+   network it is, their role, or a shared history with the user. If asked to tag supporters "by X" you
+   can't verify from returned data, state what you're basing the tag on rather than guessing.
+9. Company-first discovery (BETA): `search_accounts` only *starts* a search and returns a `campaignId`
+   (not people). Poll `list_pool` (filter by that `campaignId`) after a short wait — an empty pool =
+   "not ready yet", not "none found". `confirm_pool` only the people the user wants (it spends target
+   capacity); `reject_pool` the rest.
 
 ## Output
 

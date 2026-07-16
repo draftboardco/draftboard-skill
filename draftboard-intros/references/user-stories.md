@@ -9,16 +9,20 @@ supporter's id) and call `get_connector_intros` — it lists exactly who that pe
 to, with scores and shared-history reasons. For **teammates**, use `find_top_paths` with their
 `ownerIds`.
 
-### 2. 🟡 I have target accounts (companies) but no people — find intros to those accounts
-`list_accounts` gives an account-level view — every company where you have targets, with how many
-are 1st-/2nd-degree reachable — and you can filter targets to one company. It does **not** discover
-*new* people at a company you don't yet track: for that, add specific people (`import_targets` their
-LinkedIn URLs) then `find_top_paths`. Company-first prospecting lives in the Draftboard app.
+### 2. ✅ I have target accounts (companies) but no people — find intros to those accounts
+Two modes now. **Already have people at those companies?** `list_accounts` gives the account-level
+view — every company where you have targets, with 1st-/2nd-degree reach — and you can filter targets
+to one company (`accountId`) or to a title/role (`title`). **Don't have the names yet?** Company-first
+discovery is now in the API (BETA, Team/Enterprise): `search_accounts({ companies, titles })` starts a
+search → poll `list_pool` (by its `campaignId`) → `confirm_pool` the good people into targets → then
+`find_top_paths` for warm intros to them.
 
-### 3. 🚧 Build a target list from my ICP description
-ICP-based target generation (auto-prospecting) isn't exposed via the Integration API. Workaround:
-the user supplies known LinkedIn URLs → `import_targets` (optionally tag them as an ICP batch).
-Generating targets from a text ICP is a roadmap item.
+### 3. 🟡 Build a target list from my ICP description
+Closer now. If your ICP is "these roles at these companies", `search_accounts({ companies, titles })`
+(BETA) discovers matching people into the pool → `confirm_pool` them into targets. You still bring the
+company list and the titles (there's no free-text-ICP → company inference yet), and you can
+`import_targets` known LinkedIn URLs directly. Generating the company/target list from a pure text ICP
+remains a roadmap item.
 
 ### 4. ✅ See if teammates are connected to prospects without them doing anything
 `get_target_connections` (or `find_top_paths`) returns `owners` — the team members whose network

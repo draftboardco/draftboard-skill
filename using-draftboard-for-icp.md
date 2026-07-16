@@ -53,9 +53,10 @@ discovered**. It is *not* the thing that invents the list for you.
   come back tagged as ideal-fit), *or* bring known good-fit names yourself — then the assistant takes
   it from there and routes the intros.
 
-- **Where the "ideal-fit" label comes from.** Some of your targets are automatically marked as
-  ICP-matched by Draftboard's own AI screening; you can also label a batch yourself when you add
-  people. Either way, once a group is labeled, the assistant can aim at exactly that group.
+- **Where the "ideal-fit" grouping comes from.** You label an ideal-fit set yourself (add the people
+  and tag them), or Draftboard's app groups a batch for you — either way the group is reachable by its
+  tag **name**, and the assistant can aim at exactly that group. (Tags carry a `type` of `manual` or
+  `automatic` only; there is no separate "ICP" tag type to filter on — target the group by its name.)
 
 - **Freshly added people need a beat.** A just-imported prospect may not show a path immediately —
   Draftboard is still enriching them. "No path yet" can mean "not ready yet," and the assistant will

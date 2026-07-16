@@ -1,7 +1,8 @@
 # Tool catalog
 
-The `@draftboard/mcp` server exposes 5 thin tools (1:1 with the Integration API) and 3 outcome
-tools (composed for real jobs). Prefer outcome tools.
+The `@draftboard/mcp` server exposes 21 tools: 5 thin (1:1 with the Integration API), 9 extended,
+4 prospecting (BETA company-first discovery), and 3 outcome tools (composed for real jobs). Prefer
+outcome tools.
 
 ## Outcome tools
 
@@ -13,6 +14,7 @@ strongest connectors. **Expensive** (walks connections per target) — scope it.
 |-----|---------|-------|
 | `tagNames` | — | Only targets with these tags |
 | `accountId` | — | Only targets at one company (an id from `list_accounts`) — scopes "best intros" to that company |
+| `title` | — | Only targets whose title/position contains this text (case-insensitive) — e.g. "best intros to my Head-of-Sales targets" |
 | `ownerIds` | — | Only paths through these team members — ids from `get_me.customer.teamMembers[]` (match by name) |
 | `statuses` | `["new"]` | `new` / `completed` / `stopped` |
 | `minTargetMaxRank` | `0` | Skip weakly-reachable targets |
@@ -56,11 +58,13 @@ Returns `{ total, counted, byStatus{}, byTag{}, truncated }`.
 | Tool | Args | Returns |
 |------|------|---------|
 | `get_me` | — | `{ customer{ id, name, user{ id, firstName, lastName, linkedinUrl }, teamMembers[]{ id, firstName, lastName, linkedinUrl } } }` — `teamMembers[].id` is a valid `ownerIds` value |
-| `list_tags` | `query?, type?, pageNumber?, resultPerPage?` | `{ tags[], count, nextPage }` |
-| `list_targets` | `updatedSince?, tagIds?, tagNames?, statuses?, accountId?, pageNumber?, resultPerPage?` | `{ targets[], count, nextPage }` — `accountId` filters to one company (id from `list_accounts`) |
+| `list_tags` | `query?, type?, pageNumber?, resultPerPage?` | `{ tags[], count, nextPage }`. `type` is `manual` (you created it) or `automatic` (a system batch/date marker). |
+| `list_targets` | `updatedSince?, tagIds?, tagNames?, statuses?, accountId?, title?, pageNumber?, resultPerPage?` | `{ targets[], count, nextPage }` — `accountId` filters to one company (id from `list_accounts`); `title` is a case-insensitive title/position substring |
 | `import_targets` | `linkedinUrls (required), tags?` | import result |
 | `get_target_connections` | `targetId (required), updatedSince?, ownerIds?, pageNumber?, resultPerPage?` | `{ connections[], count, nextPage }` |
 | `list_accounts` | `query?, connectionDegree?, pageNumber?, resultPerPage?` | `{ accounts[ {id, name, targetsCount, firstDegreeCount, secondDegreeCount, pathsCount} ], count, nextPage }`. Company search: pass a company name as `query`, take the account `id` from the result. |
+
+**Tag types.** A tag's `type` is only ever `manual` — a label the customer created and applied (import, attach-tags, campaign names) — or `automatic` — a marker Draftboard stamps on a whole ingested batch, usually the date (e.g. `20-Apr-2026`). There is **no queryable `icp` tag type** (`?type=icp` is rejected); aim at an "ICP" group by its tag **name**, not a type.
 
 **Scope by company (the drill).** To answer "who do I have at company X" or "best intros to my targets at company X", do NOT page the whole target list. Resolve the company first: `list_accounts` with `query: "<company name>"` → take the `id` → then `list_targets` with `accountId` (the saved leads there) or `find_top_paths` with `accountId` (the ranked intro opportunities there). Two calls, not 45 pages.
 
@@ -90,3 +94,19 @@ reasons), and `owners` (team members who can make the intro — each with their 
 the user↔connector relationship. Use them only for the warm line about that specific intro; never
 present them as facts about the user. The teammate↔connector tie (`owners[].score`) is a strength
 number only — no shared-history reason is exposed for it, so don't invent one.
+
+## Prospecting — company-first discovery (⚠ BETA · Team/Enterprise)
+
+A different mode from everything above: instead of working over people you already track, these find
+**new** people by role at named companies. The loop is asynchronous:
+
+`search_accounts` → (wait) → `list_pool` → `confirm_pool` / `reject_pool`
+
+| Tool | Args | Notes |
+|------|------|-------|
+| `search_accounts` ⚠ | `companies (1–50)`, `titles (1–20)`, `name?` | BETA. `companies` = domains (`acme.com`) or `linkedin.com/company/…` URLs; `titles` = the persona. Returns `{ campaignId, imported, notImportedAccounts }`. People surface in the pool **asynchronously** — there is no completion signal. |
+| `list_pool` | `campaignId?, accountId?, tagIds?, query?, pageNumber?, resultPerPage?` | Discovered prospects awaiting confirm/reject: `{ prospects[ {id, name, linkedinUrl, headline, accountName, source, tags} ], count, nextPage }`. Filter by the `campaignId` from `search_accounts`. Empty right after a search = "not ready yet". |
+| `confirm_pool` ⚠ | `ids (1+)` | Promote pool prospects into targets (capacity-checked, idempotent). Returns `{ confirmedCount, remainingCapacity }`. After this they're real targets — `find_top_paths` / `list_targets` include them. |
+| `reject_pool` ⚠ | `ids (1+)` | Discard pending pool prospects (soft-delete status-`new`). Idempotent. |
+
+**The loop.** "Find me Heads of Sales at Acme and Globex" → `search_accounts({ companies: ["acme.com", "globex.com"], titles: ["Head of Sales"] })` → keep the returned `campaignId` → after a short wait `list_pool({ campaignId })` → `confirm_pool` the good `ids` into targets → then `find_top_paths` for warm intros to them. Confirming spends the plan's target capacity, so confirm only what the user wants.

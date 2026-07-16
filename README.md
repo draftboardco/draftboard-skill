@@ -149,17 +149,17 @@ then stop and tell them it's ready:*
 ## What it can and can't do yet
 
 **It's great at:** finding and ranking warm paths, checking if you're already connected, working
-through a specific teammate's network, name-drop material for cold outreach, and intro progress.
-Eight of the twelve common "how do I…" questions are answered directly today — the rest the
+through a specific teammate's network, name-drop material for cold outreach, intro progress, and —
+new in beta — company-first discovery (find people by role at named companies, then pick who to keep).
+Ten of the twelve common "how do I…" questions are answered directly today — the rest the
 assistant solves by combining the basics. The full playbook is in
 [`draftboard-intros/references/user-stories.md`](./draftboard-intros/references/user-stories.md).
 
 **Not yet, and the honest workaround:**
 
-- **"Find me intros into these companies (I have no names)."** Today you point it at specific people
-  at those companies; company-first discovery still lives in the Draftboard app.
-- **"Build my target list from a description of my ideal customer."** You bring the names (or
-  LinkedIn URLs) for now; idea-to-list generation is on the roadmap.
+- **"Build my target list from a free-text description of my ideal customer."** Partly there: "these
+  roles at these companies" now works via the beta company-first search (you name the companies and
+  titles); turning a pure prose ICP into a company list is still on the roadmap.
 - **"Let me permanently hide connections I'd never ask."** You can filter them out in the moment;
   saved preferences are managed in the app.
 - **"Show my intro-request history with a given person — hit rate, last asked."** Not exposed yet;
