@@ -114,8 +114,11 @@ connector, installs the skill, and confirms it works. When it says it's ready, a
 }
 ```
 
+On **Codex CLI**, add the same server with one command instead of the JSON above:
+`codex mcp add draftboard --env DRAFTBOARD_API_KEY=db-api_your_key_here -- npx -y github:draftboardco/mcp`.
+
 **2. Add the skill.** Copy the `draftboard-intros/` folder into your assistant's skills directory —
-for Claude Code, `~/.claude/skills/`; for Codex, point it at `draftboard-intros/AGENTS.md`.
+`~/.claude/skills/` for Claude Code, `~/.codex/skills/` for Codex CLI. Both load the same `SKILL.md`.
 
 **3. Try it.** Ask: *"Use Draftboard to show me my top intro opportunities."*
 
@@ -132,13 +135,15 @@ then stop and tell them it's ready:*
 0. **Check Node is installed.** Run `npx --version` (the server needs Node.js 20+). If it's missing,
    tell the user to install Node from <https://nodejs.org> and stop until they have — nothing runs
    without it.
-1. **Add the MCP server.** Configure a stdio MCP server named `draftboard` in the user's client
-   (Claude Code `.mcp.json`, Claude Desktop config, etc.): command `npx`, args
-   `["-y", "github:draftboardco/mcp"]`, env `DRAFTBOARD_API_KEY` = the key the user gave you. Use your
-   MCP-add command or edit the config file directly. **Never print the key back to the user.**
+1. **Add the MCP server.** Configure a stdio MCP server named `draftboard` in the user's client:
+   command `npx`, args `["-y", "github:draftboardco/mcp"]`, env `DRAFTBOARD_API_KEY` = the key the user
+   gave you. On Claude, use your MCP-add command or edit `.mcp.json` / the Claude Desktop config; on
+   Codex CLI, run `codex mcp add draftboard --env DRAFTBOARD_API_KEY=<key> -- npx -y github:draftboardco/mcp`
+   (or edit `~/.codex/config.toml`). **Never print the key back to the user.**
 2. **Install the skill.** Copy the `draftboard-intros/` folder from this repo into the user's skills
-   directory (`~/.claude/skills/draftboard-intros/` for Claude Code). If you don't have the files
-   locally, clone `https://github.com/draftboardco/draftboard-skill` first.
+   directory — `~/.claude/skills/draftboard-intros/` for Claude Code, `~/.codex/skills/draftboard-intros/`
+   for Codex CLI (both load the same `SKILL.md`). If you don't have the files locally, clone
+   `https://github.com/draftboardco/draftboard-skill` first.
 3. **Verify.** Restart the client if the tools aren't loaded yet, then call the `get_me` tool. If it
    returns the user's name, tell them setup worked and suggest *"Use Draftboard to show me my top
    intro opportunities."* If the tools are missing → the client needs a restart; if you get `401` →

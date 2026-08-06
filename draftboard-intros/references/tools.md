@@ -1,6 +1,6 @@
 # Tool catalog
 
-The `@draftboard/mcp` server exposes 21 tools: 5 thin (1:1 with the Integration API), 9 extended,
+The `@draftboard/mcp` server exposes 22 tools: 6 thin (1:1 with the Integration API), 9 extended,
 4 prospecting (BETA company-first discovery), and 3 outcome tools (composed for real jobs). Prefer
 outcome tools.
 
@@ -74,10 +74,11 @@ Returns `{ total, counted, byStatus{}, byTag{}, truncated }`.
 
 | Tool | Args | Notes |
 |------|------|-------|
-| `list_supporters` | `query?, preferred?, tiers?, pageNumber?, resultPerPage?` | Closest/preferred connectors. `preferred:true` = starred only, `false` = non-starred, omit = full network. `tiers` = one or more cadence tiers 1..5 (any-of; scoped to your own assignments) — **tier 1 = closest / "ask anytime" (5★ in the app), tier 5 = do-not-ask/excluded (1★)**; for "my closest" pass `[1]` or `[1,2]`, not `[5]`. |
+| `list_supporters` | `query?, preferred?, tiers?, pageNumber?, resultPerPage?` | Closest/preferred connectors. `preferred:true` = starred only, `false` = non-starred, omit = full network. `tiers` = one or more cadence tiers 1..5 (any-of; scoped to your own assignments) — **tier 1 = closest / "ask anytime" (★★★★ in the app), tier 5 = do-not-ask/excluded (0★)**; for "my closest" pass `[1]` or `[1,2]`, not `[5]`. Each returned supporter carries its current `tier` (absent when unreviewed). |
 | `get_connector_intros` | `connectorId (required), pageNumber?, resultPerPage?` | Connector-first: who this person can introduce you to. `connectorId` = a connection's `connectorId` (not its `id`) or a supporter's `id`. |
 | `set_connector_preferred` ⚠ | `connectorId, preferred (bool)` | Star/unstar a supporter. |
 | `set_connector_excluded` ⚠ | `connectorId, excluded (bool)` | Exclude/un-exclude a connector. |
+| `set_connector_tier` ⚠ | `connectorId, tier (0–5)` | **Rate / prioritize a supporter** (personal cadence tier). `1` = closest / "ask anytime" (best, ★★★★) … `4` = low (★), `5` = do-not-ask (0★, also excludes), `0` = clear. **tier 1 = best** (inverted). `connectorId` = a connection's `connectorId` (not its `id`) / a supporter's `id`. Read back via `list_supporters` (`tier` field / `tiers` filter). |
 | `import_supporters` ⚠ | `linkedinUrls (1–100)` | Add supporters by URL. |
 | `attach_tags_to_targets` ⚠ | `targetIds (1+)`, and ≥1 of `tagIds` / `tagNames` | Tag one/many targets; all-or-nothing. |
 | `set_intro_status` ⚠ | `introId, status (requested\|completed\|declined), reasonId?, customReason?` | Drive an intro's lifecycle. |
@@ -87,7 +88,8 @@ Returns `{ total, counted, byStatus{}, byTag{}, truncated }`.
 `degree` (`"1st"`/`"2nd"`). Raw connections carry `score` (0–100), `scoreDetails` (shared-history
 reasons), and `owners` (team members who can make the intro — each with their own `score` and an
 `id` you can pass as `ownerIds`). The outcome tools normalize these into `rank`/`rankDetails`/
-`targetMaxRank` in their output. Pagination: loop pages until `nextPage` is `0`.
+`targetMaxRank` in their output. Raw supporters (`list_supporters`) also carry a `tier` — your
+personal rating 1..5, absent when unreviewed; set it with `set_connector_tier`. Pagination: loop pages until `nextPage` is `0`.
 
 **Whose history is `scoreDetails`/`rankDetails`?** They explain why **that connector** can introduce
 **that target** — they describe the **connector↔target** pair, **not** the user's background and not

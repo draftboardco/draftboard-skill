@@ -1,67 +1,18 @@
-# Draftboard intros (Codex variant)
+# Draftboard intros — Codex / AGENTS pointer
 
-> Codex equivalent of `SKILL.md`. Same behavior; the only difference is how the skill is loaded —
-> point Codex at this file (or paste it into your `AGENTS.md`). The MCP tools and the reference
-> docs (`references/`) are identical across Claude and Codex.
+This folder ships a real skill: **[`SKILL.md`](./SKILL.md)** — the same format Codex and Claude both
+load. Install it as a skill rather than relying on this file:
 
-You help the user get **warm introductions** using their Draftboard network data, through the
-`@draftboard/mcp` server. Draftboard's core idea is **relationship proximity**: the shortest path
-from the user to a prospect (a **target**) runs through a mutual **connection** (a **connector**),
-scored 0–100 by **rank**.
+- **Codex CLI:** copy this `draftboard-intros/` folder into `~/.codex/skills/` (or a repo-scoped
+  skills dir). Codex loads `SKILL.md` on demand from its frontmatter — nothing needs to be pasted here.
+- **Claude:** copy it into `~/.claude/skills/`.
 
-## Setup check
+`SKILL.md` is the single source of truth for how to drive the `@draftboard/mcp` tools (warm intros,
+paths, targets, connections). Setup — including the Codex `codex mcp add` / `config.toml` steps — is in
+[`references/setup.md`](./references/setup.md).
 
-- Ensure the Draftboard MCP tools are registered. If not, see `references/setup.md`
-  (install `github:draftboardco/mcp`, set `DRAFTBOARD_API_KEY` in the MCP server config).
-- Call `get_me` first to confirm the account (`customer.name`/`customer.user`). The team roster is
-  here too — for "through my teammate" requests, match the name in `customer.teamMembers[]` and pass
-  their `id` as `ownerIds`.
-- Never echo the API key or ask the user to paste it.
-
-## Tool selection
-
-Prefer outcome tools; fall back to thin tools only when needed.
-
-- Best intro opportunities → `find_top_paths`
-- Through a specific teammate → `find_top_paths` with `ownerIds`
-- Already connected? (LinkedIn URLs) → `check_if_connected`
-- Intro progress → `intro_status_overview`
-- Cold-email name-drop → `find_top_paths` with `includeRankDetails: true`, use `rankDetails`
-- Scoped to a company (my leads / best intros at company X) → `list_accounts` (name→`id`), then `list_targets` / `find_top_paths` with `accountId`
-- Find NEW people by role at named companies (company-first, BETA) → `search_accounts` → wait → `list_pool` → `confirm_pool`
-- Raw data / new people → `list_targets`, `get_target_connections`, `list_tags`, `import_targets`
-
-Full playbook: `references/user-stories.md`. Tool arguments: `references/tools.md`.
-
-## Rules
-
-1. Scope `find_top_paths` with filters before large runs; if `telemetry.truncated` is true, report
-   it and apply `telemetry.nextSuggestedFilter`.
-2. Always report coverage from the `telemetry` block; never imply full coverage you didn't achieve.
-3. "Paths through <named connector>": filter `find_top_paths` results on `connector` client-side —
-   the API only filters by team member (`ownerIds`).
-4. After import/connection checks, treat `isTarget:false` / `hasPaths:false` as "not ready yet"
-   (async enrichment), not "no path".
-5. Name-drop only real `rankDetails` — and `rankDetails` is the **connector↔target** shared history
-   (why that connector can intro that target), **not** the user's background or the user↔connector
-   tie. Never attribute it to the user; never fabricate a shared connection.
-6. Company questions: scope via `accountId` (resolve the company with `list_accounts`) instead of
-   scanning the full target list — `find_top_paths` scans only a bounded top-N, so a company's
-   lower-ranked / 2nd-degree targets can otherwise be missed.
-7. Use only these tools. If a request isn't possible with them, say so and stop (or point to the
-   app) — never run raw API calls, read API keys from config/files, query a database, brute-force by
-   paging thousands of records, or import people as targets to answer a question without approval.
-8. Tagging/describing connectors or supporters: don't invent a backstory. The tools return a
-   connector's name, LinkedIn URL, position, `rank`, and (for an intro) `rankDetails` — **not** their
-   bio, seniority, or background. Use only user-provided facts or returned fields; never infer whose
-   network it is, their role, or a shared history with the user. If asked to tag supporters "by X" you
-   can't verify from returned data, state what you're basing the tag on rather than guessing.
-9. Company-first discovery (BETA): `search_accounts` only *starts* a search and returns a `campaignId`
-   (not people). Poll `list_pool` (filter by that `campaignId`) after a short wait — an empty pool =
-   "not ready yet", not "none found". `confirm_pool` only the people the user wants (it spends target
-   capacity); `reject_pool` the rest.
-
-## Output
-
-Answer first (top opportunities / yes-no / status counts), then detail. Per opportunity: connector,
-target, rank, and the `rankDetails` reason.
+If you use always-on `AGENTS.md` project guidance instead of skills, read `SKILL.md` in this folder and
+follow it verbatim. Its rules apply unchanged on Codex: scope expensive scans before running them,
+report coverage from the `telemetry` block, name-drop only real `rankDetails` (the connector↔target
+history, never the user's), confirm the irreversible `archive_target` before calling it, and stay
+inside the sanctioned tools.
