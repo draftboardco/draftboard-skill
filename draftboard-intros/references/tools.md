@@ -74,11 +74,11 @@ Returns `{ total, counted, byStatus{}, byTag{}, truncated }`.
 
 | Tool | Args | Notes |
 |------|------|-------|
-| `list_supporters` | `query?, preferred?, tiers?, pageNumber?, resultPerPage?` | Closest/preferred connectors. `preferred:true` = starred only, `false` = non-starred, omit = full network. `tiers` = one or more cadence tiers 1..5 (any-of; scoped to your own assignments) — **tier 1 = closest / "ask anytime" (★★★★ in the app), tier 5 = do-not-ask/excluded (0★)**; for "my closest" pass `[1]` or `[1,2]`, not `[5]`. Each returned supporter carries its current `tier` (absent when unreviewed). |
+| `list_supporters` | `query?, preferred?, tiers?, pageNumber?, resultPerPage?` | Closest/preferred connectors. `preferred:true` = starred only, `false` = non-starred, omit = full network. `tiers` = one or more cadence tiers 1..5 (any-of; scoped to your own assignments) — **tier 1 = closest / "ask anytime" (★★★★★ in the app), tier 5 = do-not-ask/excluded (★)**; for "my closest" pass `[1]` or `[1,2]`, not `[5]`. Each returned supporter carries its current `tier` (absent when unreviewed). |
 | `get_connector_intros` | `connectorId (required), pageNumber?, resultPerPage?` | Connector-first: who this person can introduce you to. `connectorId` = a connection's `connectorId` (not its `id`) or a supporter's `id`. |
 | `set_connector_preferred` ⚠ | `connectorId, preferred (bool)` | Star/unstar a supporter. |
 | `set_connector_excluded` ⚠ | `connectorId, excluded (bool)` | Exclude/un-exclude a connector. |
-| `set_connector_tier` ⚠ | `connectorId, tier (0–5)` | **Rate / prioritize a supporter** (personal cadence tier). `1` = closest / "ask anytime" (best, ★★★★) … `4` = low (★), `5` = do-not-ask (0★, also excludes), `0` = clear. **tier 1 = best** (inverted). `connectorId` = a connection's `connectorId` (not its `id`) / a supporter's `id`. Read back via `list_supporters` (`tier` field / `tiers` filter). |
+| `set_connector_tier` ⚠ | `connectorId, tier (0–5)` | **Rate / prioritize a supporter** (personal cadence tier). `1` = closest / "ask anytime" (best, ★★★★★) … `4` = low (★★), `5` = do-not-ask (★, also excludes), `0` = clear. **tier 1 = best** (inverted). `connectorId` = a connection's `connectorId` (not its `id`) / a supporter's `id`. Read back via `list_supporters` (`tier` field / `tiers` filter). |
 | `import_supporters` ⚠ | `linkedinUrls (1–100)` | Add supporters by URL. |
 | `attach_tags_to_targets` ⚠ | `targetIds (1+)`, and ≥1 of `tagIds` / `tagNames` | Tag one/many targets; all-or-nothing. |
 | `set_intro_status` ⚠ | `introId, status (requested\|completed\|declined), reasonId?, customReason?` | Drive an intro's lifecycle. |

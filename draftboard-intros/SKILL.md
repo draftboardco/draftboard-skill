@@ -32,7 +32,7 @@ know how complete the answer is. Drop to **thin tools** only when no outcome too
 | Progress of intros (new / completed / stopped) | `intro_status_overview` |
 | Cold email that name-drops a mutual connection | `find_top_paths` (`includeRankDetails: true`), use `rankDetails` |
 | Who can a specific connector introduce me to? | `get_connector_intros` (connector-first) |
-| Mark / rate / list my closest connections (supporters) | `set_connector_tier` (rate 0..5; tier 1 = closest / "ask anytime", 5 = do-not-ask, 0 = clear), `set_connector_preferred`, `list_supporters` (filter `tiers: [1]` for the closest — tier 1 = warmest, tier 5 = do-not-ask) |
+| Mark / rate / list my closest connections (supporters) | `set_connector_tier` (rate 0..5; tier 1 = closest / "ask anytime" = ★★★★★ in the app, 5 = do-not-ask = ★, 0 = clear), `set_connector_preferred`, `list_supporters` (filter `tiers: [1]` for the closest — tier 1 = warmest, tier 5 = do-not-ask) |
 | Hide connections I'd never ask | `set_connector_excluded` |
 | Account-level view (companies with targets) | `list_accounts` |
 | My saved leads at a specific company | `list_accounts` (name→`id`), then `list_targets` with `accountId` |

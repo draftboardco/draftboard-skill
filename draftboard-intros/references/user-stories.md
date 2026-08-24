@@ -41,8 +41,8 @@ from warm-path results; `excluded: false` undoes it. (WRITE — the host approve
 ### 7. ✅ Mark my closest connections and only see paths through them
 `set_connector_preferred` (`preferred: true`) stars a connector as a supporter; `list_supporters`
 shows your starred set (`preferred: true`) or full network. Closeness is also a 1..5 **cadence tier**
-(the richer successor to the star): **tier 1 = closest / "ask anytime" (★★★★ in the app)**, ascending to
-**tier 5 = do-not-ask/excluded (0★)**. **Set** a connector's tier with `set_connector_tier`
+(the richer successor to the star): **tier 1 = closest / "ask anytime" (★★★★★ in the app)**, ascending to
+**tier 5 = do-not-ask/excluded (★)**. **Set** a connector's tier with `set_connector_tier`
 (`tier: 1` = closest, `5` = do-not-ask, `0` = clear) — this is how you "rate" or "prioritize" a
 supporter (WRITE — host-approved). To see only your warmest supporters, call `list_supporters`
 with `tiers: [1]` (or `[1,2]`) — not `[5]`. Preferred / low-tier connectors are prioritized in
