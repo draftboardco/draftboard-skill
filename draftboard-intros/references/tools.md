@@ -23,11 +23,14 @@ strongest connectors. **Expensive** (walks connections per target) — scope it.
 | `maxTargetsScanned` | `25` | How many targets to fetch connections for |
 | `connectorsPerTarget` | `3` | Top connectors per target |
 | `includeRankDetails` | `true` | Shared-history reasons (for name-drops) |
+| `includeRelationships` | `true` | Pass through `relationships` + `relationshipDetails` when the API returns any |
 
 Returns `{ opportunities[], telemetry{ targetsMatched, targetsScanned, connectionsFetched,
 opportunitiesFound, truncated, nextSuggestedFilter? }, warnings? }`. Each opportunity:
 `{ target, targetLinkedinUrl, targetCompany, targetMaxRank, connector, connectorLinkedinUrl,
-connectorPosition, rank, rankDetails?, owners[] }`.
+connectorPosition, rank, rankDetails?, relationships?, relationshipDetails?, owners[] }`. The last
+two are present only when the API returned something for that pair — usually it does not, which is
+**not** evidence against the connector (see **Field notes**).
 
 ### `check_if_connected`
 Given LinkedIn URLs, reports whether the user already has warm paths to each. Imports missing ones
@@ -61,7 +64,7 @@ Returns `{ total, counted, byStatus{}, byTag{}, truncated }`.
 | `list_tags` | `query?, type?, pageNumber?, resultPerPage?` | `{ tags[], count, nextPage }`. `type` is `manual` (you created it) or `automatic` (a system batch/date marker). |
 | `list_targets` | `updatedSince?, tagIds?, tagNames?, statuses?, accountId?, title?, pageNumber?, resultPerPage?` | `{ targets[], count, nextPage }` — `accountId` filters to one company (id from `list_accounts`); `title` is a case-insensitive title/position substring |
 | `import_targets` | `linkedinUrls (required), tags?` | import result |
-| `get_target_connections` | `targetId (required), updatedSince?, ownerIds?, pageNumber?, resultPerPage?` | `{ connections[], count, nextPage }` |
+| `get_target_connections` | `targetId (required), updatedSince?, ownerIds?, pageNumber?, resultPerPage?` | `{ connections[], count, nextPage }` — each connection has `score`, `scoreDetails`, `owners`, and **may** have `relationships` / `relationshipDetails` (see **Field notes**) |
 | `list_accounts` | `query?, connectionDegree?, pageNumber?, resultPerPage?` | `{ accounts[ {id, name, targetsCount, firstDegreeCount, secondDegreeCount, pathsCount} ], count, nextPage }`. Company search: pass a company name as `query`, take the account `id` from the result. |
 
 **Tag types.** A tag's `type` is only ever `manual` — a label the customer created and applied (import, attach-tags, campaign names) — or `automatic` — a marker Draftboard stamps on a whole ingested batch, usually the date (e.g. `20-Apr-2026`). There is **no queryable `icp` tag type** (`?type=icp` is rejected); aim at an "ICP" group by its tag **name**, not a type.
@@ -74,11 +77,11 @@ Returns `{ total, counted, byStatus{}, byTag{}, truncated }`.
 
 | Tool | Args | Notes |
 |------|------|-------|
-| `list_supporters` | `query?, preferred?, tiers?, pageNumber?, resultPerPage?` | Closest/preferred connectors. `preferred:true` = starred only, `false` = non-starred, omit = full network. `tiers` = one or more cadence tiers 1..5 (any-of; scoped to your own assignments) — **tier 1 = closest / "ask anytime" (★★★★★ in the app), tier 5 = do-not-ask/excluded (★)**; for "my closest" pass `[1]` or `[1,2]`, not `[5]`. Each returned supporter carries its current `tier` (absent when unreviewed). |
-| `get_connector_intros` | `connectorId (required), pageNumber?, resultPerPage?` | Connector-first: who this person can introduce you to. `connectorId` = a connection's `connectorId` (not its `id`) or a supporter's `id`. |
-| `set_connector_preferred` ⚠ | `connectorId, preferred (bool)` | Star/unstar a supporter. |
-| `set_connector_excluded` ⚠ | `connectorId, excluded (bool)` | Exclude/un-exclude a connector. |
-| `set_connector_tier` ⚠ | `connectorId, tier (0–5)` | **Rate / prioritize a supporter** (personal cadence tier). `1` = closest / "ask anytime" (best, ★★★★★) … `4` = low (★★), `5` = do-not-ask (★, also excludes), `0` = clear. **tier 1 = best** (inverted). `connectorId` = a connection's `connectorId` (not its `id`) / a supporter's `id`. Read back via `list_supporters` (`tier` field / `tiers` filter). |
+| `list_supporters` | `query?, preferred?, ratings?, tiers?, pageNumber?, resultPerPage?` | Your rated / closest connectors. Each returned supporter carries your personal star **`rating` 1..5 — higher is better** (5 = ★★★★★ "ask anytime", 1 = ★ "don't ask"), absent when unreviewed, plus `tier`, the same value on the raw wire scale (`rating = 6 - tier`, counts down). Filter with `ratings` — **`[5]` (or `[4,5]`) is "my closest connections"**. `tiers` is the same filter wire-side (`[1]` ≡ `ratings: [5]`) and the two are **unioned, not intersected**. **`ratings: [1]` doubles as the "Hidden" scope:** a connector rated 1 is hidden from the default listing, and asking for `[1]` (≡ `tiers: [5]`) is the only way to list them — there is no separate hidden flag. *(Team exception: a connector YOU rated 1 still appears in your default listing while a teammate keeps them visible, carrying your own `rating: 1`.)* `preferred` is the legacy star flag (`true` ≈ `rating: 5`): `true` = starred only, `false` = non-starred, omit = full network. |
+| `get_connector_intros` | `connectorId (required), pageNumber?, resultPerPage?` | Connector-first: who this person can introduce you to. `connectorId` = a connection's `connectorId` (not its `id`) or a supporter's `id`. Each item carries `score` + `scoreDetails` and may also carry `relationships` / `relationshipDetails` (see **Field notes**). The response's `connector` object carries your star `rating` (1..5, higher is better). |
+| `set_connector_preferred` ⚠ | `connectorId, preferred (bool)` | Star/unstar a supporter. **Legacy** — the product moved this onto the rating (`preferred: true` is in practice `rating: 5`); for a new write prefer `set_connector_tier`. |
+| `set_connector_excluded` ⚠ | `connectorId, excluded (bool)` | Exclude/un-exclude a connector. **Legacy** — the product moved this onto the rating (`excluded: true` ≡ `rating: 1`, which also hides them); for a new write prefer `set_connector_tier` with `rating: 1`. |
+| `set_connector_tier` ⚠ | `connectorId, rating (1–5)` **or** `tier (0–5)` — exactly one | **Rate / prioritize a supporter.** `rating` is the star scale, **higher is better**: `5` = ★★★★★ "ask anytime" (closest) down to `1` = ★ "don't ask", with `4`, `3` and `2` in between — **and `rating: 1` also hides the connector** from the default listings. `tier` is the same value on the raw wire scale, counting down (`tier = 6 - rating`); it still works and is not deprecated. Send **exactly one** of the two — both, or neither, is rejected. There is no `rating: 0`: **clearing a rating stays `tier: 0`**. `connectorId` = a connection's `connectorId` (not its `id`) / a supporter's `id`. Read back via `list_supporters` (`rating` field / `ratings` filter). |
 | `import_supporters` ⚠ | `linkedinUrls (1–100)` | Add supporters by URL. |
 | `attach_tags_to_targets` ⚠ | `targetIds (1+)`, and ≥1 of `tagIds` / `tagNames` | Tag one/many targets; all-or-nothing. |
 | `set_intro_status` ⚠ | `introId, status (requested\|completed\|declined), reasonId?, customReason?` | Drive an intro's lifecycle. |
@@ -88,14 +91,46 @@ Returns `{ total, counted, byStatus{}, byTag{}, truncated }`.
 `degree` (`"1st"`/`"2nd"`). Raw connections carry `score` (0–100), `scoreDetails` (shared-history
 reasons), and `owners` (team members who can make the intro — each with their own `score` and an
 `id` you can pass as `ownerIds`). The outcome tools normalize these into `rank`/`rankDetails`/
-`targetMaxRank` in their output. Raw supporters (`list_supporters`) also carry a `tier` — your
-personal rating 1..5, absent when unreviewed; set it with `set_connector_tier`. Pagination: loop pages until `nextPage` is `0`.
+`targetMaxRank` in their output. Raw supporters (`list_supporters`) carry your personal star
+`rating` — 1..5, **higher is better**, absent when unreviewed — plus `tier`, the same value on the
+raw wire scale counting down (`rating = 6 - tier`); set either with `set_connector_tier`.
+Pagination: loop pages until `nextPage` is `0`.
 
-**Whose history is `scoreDetails`/`rankDetails`?** They explain why **that connector** can introduce
-**that target** — they describe the **connector↔target** pair, **not** the user's background and not
-the user↔connector relationship. Use them only for the warm line about that specific intro; never
-present them as facts about the user. The teammate↔connector tie (`owners[].score`) is a strength
-number only — no shared-history reason is exposed for it, so don't invent one.
+**How the connector and the target know each other (`relationships` / `relationshipDetails`).**
+`get_target_connections` and `get_connector_intros` may carry two structured fields alongside
+`scoreDetails`; `find_top_paths` passes them through onto each opportunity.
+
+- `relationships` — a list of zero or more of exactly `current_colleague`, `former_colleague`,
+  `university_classmate`. No other value is ever emitted.
+- `relationshipDetails` — the machine-readable facts behind `scoreDetails`: one record per shared
+  company / school / mutual-contact signal, with **exactly one** of `employment` (`company`,
+  `department`, `location`, `overlapStartDate`, `overlapEndDate` as ISO `yyyy-MM-dd`, `loose`,
+  `unit`) / `education` (`school` + the same window) / `mutualConnections` (`count`) set, plus that
+  record's own `score`.
+
+🔴 **Both keys are ABSENT when empty — the key is simply not in the JSON, it is never `[]`.** Read
+them as `connection.relationships ?? []`.
+
+🔴 **Empty is the MAJORITY case** — measured in production, `relationships` is non-empty on ~7.6%
+of scored relationships and `relationshipDetails` on ~0.5% (anything scored before the structured
+model shipped carries neither, and there is no backfill). **Absence means "we hold no structured signal for this pair" — NOT "these two have no
+relationship."** Never drop, downrank, or skip a connector because these fields are missing, and
+never tell the user a connector has no shared history on that basis. `scoreDetails` stays the
+always-present fallback and the authoritative human-readable list.
+
+The two fields are also **independent**, not two views of one thing: a connection whose only signal
+is shared contacts gets a `relationshipDetails` record and **no** `relationships` entry, while an
+older rank can carry `relationships` with no records. Never derive, gate, or index-align one from
+the other or from `scoreDetails`.
+
+**Whose history is `scoreDetails`/`rankDetails`/`relationships`/`relationshipDetails`?** They all
+explain why **that connector** can introduce **that target** — they describe the
+**connector↔target** pair, **not** the user's background and not the user↔connector relationship.
+So `current_colleague` means the connector and the target work together *now* — it says nothing
+about where the user works, and a shared `employment.company` is *their* shared employer, not the
+user's. Use them only for the warm line about that specific intro; never present them as facts
+about the user. The teammate↔connector tie (`owners[].score`) is a strength number only — no
+shared-history reason is exposed for it, so don't invent one.
 
 ## Prospecting — company-first discovery (⚠ BETA · Team/Enterprise)
 

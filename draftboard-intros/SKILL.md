@@ -32,8 +32,10 @@ know how complete the answer is. Drop to **thin tools** only when no outcome too
 | Progress of intros (new / completed / stopped) | `intro_status_overview` |
 | Cold email that name-drops a mutual connection | `find_top_paths` (`includeRankDetails: true`), use `rankDetails` |
 | Who can a specific connector introduce me to? | `get_connector_intros` (connector-first) |
-| Mark / rate / list my closest connections (supporters) | `set_connector_tier` (rate 0..5; tier 1 = closest / "ask anytime" = ★★★★★ in the app, 5 = do-not-ask = ★, 0 = clear), `set_connector_preferred`, `list_supporters` (filter `tiers: [1]` for the closest — tier 1 = warmest, tier 5 = do-not-ask) |
-| Hide connections I'd never ask | `set_connector_excluded` |
+| Mark / rate / list my closest connections (supporters) | `set_connector_tier` with **`rating` 1–5, higher is better** (5 = ★★★★★ "ask anytime", 1 = ★ "don't ask" — which also hides them; `tier: 0` clears, and `tier` 0–5 is the same value on the wire scale). Read them back with `list_supporters` and filter **`ratings: [5]`** for the closest. |
+| Hide connections I'd never ask | `set_connector_tier` with `rating: 1` (a rating of 1 hides them). `set_connector_excluded` is the legacy equivalent. |
+| List the ones I already hid | `list_supporters` with `ratings: [1]` — the rating filter *is* the "Hidden" scope; the default listing omits them |
+| How do these two know each other? (connector ↔ target) | `get_target_connections` / `get_connector_intros` / `find_top_paths` — read `relationships` + `relationshipDetails`, and fall back to `scoreDetails`, which is always there |
 | Account-level view (companies with targets) | `list_accounts` |
 | My saved leads at a specific company | `list_accounts` (name→`id`), then `list_targets` with `accountId` |
 | My saved leads with a specific title/role | `list_targets` with `title` (a title/position substring; optionally + `accountId`) |
@@ -80,11 +82,23 @@ closest workarounds — is in `references/user-stories.md`. The tool catalog wit
 - **Newly imported people need time.** After `import_targets` / `check_if_connected`, enrichment and
   path scoring are asynchronous — if a person shows `isTarget: false` or `hasPaths: false`
   immediately, tell the user to re-check shortly rather than concluding there's no path.
-- **Name-drop responsibly.** A connector's `rankDetails` (shared history) describes the
+- **Name-drop responsibly.** A connector's `rankDetails`/`scoreDetails` (shared history) describes the
   **connector↔target** relationship — why *that* connector can introduce *that* target. It is **not**
   the user's own background and not the user↔connector history. Use it for the warm line about that
   specific intro, mention only real returned facts, and never present it as a fact about the user or
   invent a shared connection. (The teammate↔connector tie is a bare score with no reason exposed.)
+  **The same rule covers `relationships` and `relationshipDetails`**: `current_colleague` means the
+  connector and the *target* work together now, and an `employment.company` is *their* shared
+  employer — never the user's. Don't say "you both worked at X" off these fields.
+- **A missing `relationships`/`relationshipDetails` is not a weak connector.** Both keys are simply
+  absent when empty (never `[]`), and empty is the majority case — most scored relationships predate
+  the structured model and there is no backfill. Absence means "no structured signal for this pair",
+  **not** "these two have no relationship": never drop, downrank, or apologise for a connector on
+  that basis, and keep using `scoreDetails`, which is present far more often (it is the model's own prose) — though it too is omitted when empty, so read it as `scoreDetails ?? []`. The three `relationships`
+  values are exactly `current_colleague`, `former_colleague`, `university_classmate`. The two fields
+  are independent — a shared-contacts-only signal gives a `relationshipDetails` record and **no**
+  `relationships` entry — so never derive or align one from the other. Details in
+  `references/tools.md` → **Field notes**.
 - **Tagging or describing connectors/supporters — don't invent a backstory.** The tools return a
   connector's name, LinkedIn URL, position, `rank`, and (for an intro) `rankDetails` — **not** their
   bio, seniority, or personal background. When you tag, star, or describe a supporter, use only
