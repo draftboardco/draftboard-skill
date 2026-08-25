@@ -35,23 +35,32 @@ Draftboard org with their networks already scanned.
 (Connections also carry an `owners[]` list showing which teammates can make a given intro.)
 
 ### 6. ✅ Exclude connections I'm not close enough to ask
-Rate them ★: `set_connector_tier` with `rating: 1` ("don't ask") drops that connector from warm-path
-results and hides them from the default `list_supporters`. Review who you hid with
-`list_supporters({ ratings: [1] })`, and undo by rating them higher (or `tier: 0` to clear).
-`set_connector_excluded` (`excluded: true` / `false`) is the legacy equivalent of the same state and
-still works. (WRITE — the host approves the call.)
+Rate them 1 star: `set_connector_tier` with `rating: 1` ("don't ask") drops that connector from
+warm-path results and hides them from the default `list_supporters`. Review who you hid with
+`list_supporters({ ratings: [1] })`, and un-hide by rating them 2–5 (or `tier: 0` to clear).
+*(Legacy: `set_connector_excluded` reaches the same hidden state, but its sync runs one way —
+`excluded: false` does **not** clear a `rating: 1`, so re-rate rather than un-exclude.)*
+(WRITE — the host approves the call.)
 
 ### 7. ✅ Mark my closest connections and only see paths through them
 Closeness is a **star rating, 1..5, higher is better**: **5 = ★★★★★ "ask anytime" (closest)**, down to
-**1 = ★ "don't ask"**. **Set** it with `set_connector_tier` (`rating: 5` = closest, `rating: 1` =
-don't ask, `tier: 0` = clear the rating) — this is how you "rate" or "prioritize" a supporter
-(WRITE — host-approved). **Read** it back with `list_supporters`: every supporter carries its
-`rating`, and `ratings: [5]` (or `[4,5]`) is "only my warmest". Note that `rating: 1` also **hides**
-the connector, so the default listing omits them — `ratings: [1]` is how you review who you hid.
-Higher-rated connectors are prioritized in ranking, so "only see paths through my closest" ≈ work
-from that filtered `list_supporters`. `tier` (0..5, counting down — `tier = 6 - rating`) is the same
-value on the raw wire scale and still works everywhere; send exactly one of the two.
-`set_connector_preferred` is the legacy star flag (`preferred: true` ≈ `rating: 5`).
+**1 = ★ "don't ask"**. The rating *is* the star — nothing else in this API is.
+
+- **SET** — `set_connector_tier` with `rating` (`5` = closest, `1` = don't ask, `tier: 0` = clear).
+  This is what "star this person", "rate them" and "prioritize them as a supporter" all mean
+  (WRITE — host-approved).
+- **SEARCH** — `list_supporters`: every supporter carries its `rating`, and `ratings: [5]` (or
+  `[4,5]`) is "only my warmest".
+
+Note that `rating: 1` also **hides** the connector, so the default listing omits them — `ratings: [1]`
+is how you review who you hid. Higher-rated connectors are prioritized in ranking, so "only see paths
+through my closest" ≈ work from that filtered `list_supporters`. `tier` is the same setting spelled as
+the raw wire number (0..5, **lower is better**: 1 = "ask anytime" … 5 = "don't ask", 0 = clear) and
+still works everywhere; send exactly one of the two, and never describe a tier in stars.
+
+*(Legacy: `set_connector_preferred` sets, and `list_supporters` with `preferred` searches, a separate
+boolean flag — not a rating, and not the same axis. `set_connector_tier` never writes it, so
+`rating: 5` does not mark someone preferred. Prefer the rating.)*
 
 ### 8. ✅ Am I already connected to the prospects I upload?
 `check_if_connected` with the LinkedIn URLs. Returns per-URL `directlyConnected` (true when you/a
@@ -86,13 +95,14 @@ structured records behind the shared history (shared `employment` with an overla
 then `former_colleague` with the most recent `overlapEndDate`, then the rest, and open the ask with a
 fact you can point at ("you two are both at Acme in Engineering").
 
-**But read the silence correctly.** Both keys are **absent when empty**, and empty is the majority
-case — most scored relationships predate the structured model and there is no backfill. A connector
-without `relationships` is **not** a connector without a relationship; it is one whose tie we haven't
-classified. So use this to *promote* the ones that carry a current-colleague signal, never to demote
-or hide the rest, and always fall back to `scoreDetails` for the warm line (present far more often than the structured fields, but read it as `scoreDetails ?? []` — it is omitted when empty too). Say what
-you sorted on, e.g. "3 of these 12 are flagged as current colleagues — the other 9 aren't classified,
-not disqualified."
+**But read the silence correctly.** Both keys are present when Draftboard holds that signal for the
+pair and **absent when it does not** — read them as `relationships ?? []`. A connector without
+`relationships` is **not** a connector without a relationship; it is one whose tie we haven't
+classified. So **promote on the signal, never demote on its absence**: lead with the ones carrying a
+current-colleague signal, never demote or hide the rest, and always fall back to `scoreDetails` for
+the warm line (it carries the human-readable summary, and is itself omitted when there is nothing to
+say — read it as `scoreDetails ?? []`). Say what you sorted on, e.g. "3 of these 12 are flagged as
+current colleagues — the other 9 aren't classified, not disqualified."
 
 ---
 

@@ -191,6 +191,23 @@ except to Draftboard's own API. Nothing about your network is sent to any third 
 
 ---
 
+## Editing these docs
+
+Every `.md` here is loaded verbatim by an assistant, so the wording is part of the product.
+`scripts/check-docs.mjs` guards it on every push and pull request: no derivation formula between
+`rating` and `tier`, no coverage statistics, no internal history, and ★ / the word "star" only ever
+on `rating` — plus a handful of sentences (such as the "absent is not a negative signal" guidance)
+that must stay. Run it locally before you open a PR:
+
+```bash
+node scripts/check-docs.mjs
+```
+
+Node 20+, no dependencies, no install. It prints `file:line: rule — "offending text"` and exits
+non-zero on a violation.
+
+---
+
 ## Feedback & support
 
 This is an early beta, and your reports shape it directly. If setup snags or an answer looks off,

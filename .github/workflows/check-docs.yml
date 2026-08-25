@@ -1,0 +1,19 @@
+name: check-docs
+
+# The .md files in this repo are the instructions an assistant actually loads,
+# so their vocabulary is part of the product contract. scripts/check-docs.mjs
+# is dependency-free — no install step, just Node.
+on:
+  push:
+  pull_request:
+
+jobs:
+  check-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Check docs vocabulary
+        run: node scripts/check-docs.mjs

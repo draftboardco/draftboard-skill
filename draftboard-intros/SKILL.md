@@ -32,10 +32,11 @@ know how complete the answer is. Drop to **thin tools** only when no outcome too
 | Progress of intros (new / completed / stopped) | `intro_status_overview` |
 | Cold email that name-drops a mutual connection | `find_top_paths` (`includeRankDetails: true`), use `rankDetails` |
 | Who can a specific connector introduce me to? | `get_connector_intros` (connector-first) |
-| Mark / rate / list my closest connections (supporters) | `set_connector_tier` with **`rating` 1–5, higher is better** (5 = ★★★★★ "ask anytime", 1 = ★ "don't ask" — which also hides them; `tier: 0` clears, and `tier` 0–5 is the same value on the wire scale). Read them back with `list_supporters` and filter **`ratings: [5]`** for the closest. |
-| Hide connections I'd never ask | `set_connector_tier` with `rating: 1` (a rating of 1 hides them). `set_connector_excluded` is the legacy equivalent. |
+| **Star / rate a connection** ("star this person", "mark them as a go-to", "rate them 5") | `set_connector_tier` with **`rating` 1–5, higher is better** (5 = ★★★★★ "ask anytime", 1 = ★ "don't ask" — which also hides them; `tier: 0` clears) |
+| **List my starred / closest connections** ("who did I rate 5", "my go-tos") | `list_supporters` with **`ratings: [5]`** (or `[4,5]`) |
+| Hide connections I'd never ask | `set_connector_tier` with `rating: 1` — a rating of 1 hides them |
 | List the ones I already hid | `list_supporters` with `ratings: [1]` — the rating filter *is* the "Hidden" scope; the default listing omits them |
-| How do these two know each other? (connector ↔ target) | `get_target_connections` / `get_connector_intros` / `find_top_paths` — read `relationships` + `relationshipDetails`, and fall back to `scoreDetails`, which is always there |
+| How do these two know each other? (connector ↔ target) | `get_target_connections` / `get_connector_intros` / `find_top_paths` — read `relationships` + `relationshipDetails`, and fall back to `scoreDetails` |
 | Account-level view (companies with targets) | `list_accounts` |
 | My saved leads at a specific company | `list_accounts` (name→`id`), then `list_targets` with `accountId` |
 | My saved leads with a specific title/role | `list_targets` with `title` (a title/position substring; optionally + `accountId`) |
@@ -44,6 +45,21 @@ know how complete the answer is. Drop to **thin tools** only when no outcome too
 | Move an intro forward (sent / made / declined) | `set_intro_status` |
 | Raw target / connection / tag data | `list_targets`, `get_target_connections`, `list_tags` |
 | Add new people / supporters to track | `import_targets`, `import_supporters` |
+
+**"Star" means the `rating`, and only the `rating`.** It is 1–5, higher is better, and it is the
+only thing with ★ glyphs. `tier` is the same setting spelled as the raw wire number (1–5, **lower**
+is better) — pass it only when the user already holds tier numbers, and never describe it in stars.
+The `preferred` flag is a third thing entirely and is **not** a star.
+
+**Legacy — `preferred` and `excluded` (still wired, still work).** The product moved both onto the
+rating, so reach for `set_connector_tier` / `ratings` for every set-and-search intent, and use these
+two only when the user explicitly asks for those flags:
+- `set_connector_preferred` (set) and `list_supporters` with `preferred` (search) drive a separate
+  boolean column. `set_connector_tier` **never writes it** — `rating: 5` does not mark someone
+  preferred, and marking someone preferred does not give them a rating.
+- `set_connector_excluded` hides a connector like `rating: 1` does, but the sync runs **one way**:
+  writing a rating updates the flag, while `excluded: false` does *not* clear a `rating: 1`. To
+  un-hide someone, give them a `rating` of 2–5 — don't un-exclude.
 
 Tools marked WRITE change Draftboard data; the host approves each call, but still confirm
 destructive ones (`archive_target` is **not reversible**) with the user first.
@@ -90,18 +106,20 @@ closest workarounds — is in `references/user-stories.md`. The tool catalog wit
   **The same rule covers `relationships` and `relationshipDetails`**: `current_colleague` means the
   connector and the *target* work together now, and an `employment.company` is *their* shared
   employer — never the user's. Don't say "you both worked at X" off these fields.
-- **A missing `relationships`/`relationshipDetails` is not a weak connector.** Both keys are simply
-  absent when empty (never `[]`), and empty is the majority case — most scored relationships predate
-  the structured model and there is no backfill. Absence means "no structured signal for this pair",
-  **not** "these two have no relationship": never drop, downrank, or apologise for a connector on
-  that basis, and keep using `scoreDetails`, which is present far more often (it is the model's own prose) — though it too is omitted when empty, so read it as `scoreDetails ?? []`. The three `relationships`
-  values are exactly `current_colleague`, `former_colleague`, `university_classmate`. The two fields
-  are independent — a shared-contacts-only signal gives a `relationshipDetails` record and **no**
-  `relationships` entry — so never derive or align one from the other. Details in
-  `references/tools.md` → **Field notes**.
+- **A missing `relationships`/`relationshipDetails` is not a weak connector.** Both keys are present
+  when Draftboard holds that signal for the pair and simply **absent** when it does not (never `[]`),
+  so read them as `connection.relationships ?? []`. Absence means "no structured signal for this
+  pair", **not** "these two have no relationship": **promote on the signal, never demote on its
+  absence** — never drop, downrank, or apologise for a connector on that basis, and keep using
+  `scoreDetails`, which carries the human-readable summary (read it as `scoreDetails ?? []` — it too
+  is omitted when there is nothing to say). The three `relationships` values are exactly
+  `current_colleague`, `former_colleague`, `university_classmate`. The two fields are independent —
+  a shared-contacts-only signal gives a `relationshipDetails` record and **no** `relationships`
+  entry — so never derive or align one from the other. Details in `references/tools.md` →
+  **Field notes**.
 - **Tagging or describing connectors/supporters — don't invent a backstory.** The tools return a
   connector's name, LinkedIn URL, position, `rank`, and (for an intro) `rankDetails` — **not** their
-  bio, seniority, or personal background. When you tag, star, or describe a supporter, use only
+  bio, seniority, or personal background. When you tag, rate, or describe a supporter, use only
   user-provided facts or fields actually returned; never infer *whose* network it is, their role, or a
   shared history with the user. If asked to tag supporters "by <something>" you can't verify from
   returned data, say what you're basing the tag on (e.g. the user's own words) rather than guessing.
