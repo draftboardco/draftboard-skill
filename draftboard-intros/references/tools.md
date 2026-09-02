@@ -33,19 +33,30 @@ two are present only when the API holds that signal for the pair; their absence 
 against the connector (see **Field notes**).
 
 ### `check_if_connected`
-Given LinkedIn URLs, reports whether the user already has warm paths to each. Imports missing ones
-by default.
+Given LinkedIn URLs, reports whether the user already has warm paths to each. One direct lookup per
+URL — the answer does not depend on how big the saved book is. Imports the ones that are not targets
+yet (and only those), then re-checks them. Imports are processed asynchronously, so a brand-new
+person usually comes back `import_pending` on this call rather than with an id.
 
 | Arg | Default | Notes |
 |-----|---------|-------|
-| `linkedinUrls` | (required) | Profile URLs to check |
-| `importIfMissing` | `true` | Import URLs that aren't targets yet |
+| `linkedinUrls` | (required) | Profile URLs to check — **max 10 per call** (each costs up to three API reads and the account is limited to 50 reads/minute); split larger lists |
+| `importIfMissing` | `true` | Import **only** the URLs that turned out not to be targets |
 | `tags` | — | Tags for imported targets |
 
-Returns `{ results[ { linkedinUrl, isTarget, targetId?, degree?, directlyConnected, hasPaths,
-pathsCount?, topConnector?, topRank?, note? } ], telemetry, warnings? }`. `directlyConnected` is true
-when the target's `degree` is `"1st"` (you/a teammate already know them directly). Freshly imported
-people may not have paths until enrichment finishes.
+Returns `{ results[ { linkedinUrl, status, isTarget, targetId?, degree?, directlyConnected,
+hasPaths, pathsCount?, topConnector?, topRank?, note? } ], telemetry{ checked, resolved, imported },
+warnings? }`. `directlyConnected` is true when the target's `degree` is `"1st"` (you/a teammate
+already know them directly). Freshly imported people may not have paths until enrichment finishes.
+
+**`status` is the field to read, not `isTarget` alone.** It is `target`, `not_a_target`,
+`import_pending`, or `lookup_failed`. On the last two the answer is UNKNOWN and `isTarget`/`hasPaths`
+are `null`, not `false` — never tell the user there is no path on the strength of it. `import_pending`
+means the import was accepted but Draftboard has not finished processing the batch; re-check with
+`resolve_target` in a few moments. `telemetry` carries `importRequested` and `importPending` so a
+half-landed import is reported honestly rather than as a row of misses.
+
+For a single person, `resolve_target` answers the same question in one call.
 
 ### `intro_status_overview`
 Summarize targets by status, with a per-tag breakdown.
@@ -62,12 +73,15 @@ Returns `{ total, counted, byStatus{}, byTag{}, truncated }`.
 |------|------|---------|
 | `get_me` | — | `{ customer{ id, name, user{ id, firstName, lastName, linkedinUrl }, teamMembers[]{ id, firstName, lastName, linkedinUrl } } }` — `teamMembers[].id` is a valid `ownerIds` value |
 | `list_tags` | `query?, type?, pageNumber?, resultPerPage?` | `{ tags[], count, nextPage }`. `type` is `manual` (you created it) or `automatic` (a system batch/date marker). |
-| `list_targets` | `updatedSince?, tagIds?, tagNames?, statuses?, accountId?, title?, pageNumber?, resultPerPage?` | `{ targets[], count, nextPage }` — `accountId` filters to one company (id from `list_accounts`); `title` is a case-insensitive title/position substring |
+| `list_targets` | `updatedSince?, tagIds?, tagNames?, statuses?, accountId?, title?, pageNumber?, resultPerPage?` | `{ targets[], count, nextPage }` — **only targets that already have at least one path**; `accountId` filters to one company (id from `list_accounts`); `title` is a case-insensitive title/position substring |
+| `resolve_target` | `linkedinUrl (required)` | `{ found: true, target }` or `{ found: false, linkedinUrl, note }`. One direct lookup — finds **any** non-archived target, including one just imported with no paths yet. `found: false` is an answer, not an error. |
 | `import_targets` | `linkedinUrls (required), tags?` | import result |
 | `get_target_connections` | `targetId (required), updatedSince?, ownerIds?, pageNumber?, resultPerPage?` | `{ connections[], count, nextPage }` — each connection has `score`, `scoreDetails`, `owners`, and **may** have `relationships` / `relationshipDetails` (see **Field notes**) |
 | `list_accounts` | `query?, connectionDegree?, pageNumber?, resultPerPage?` | `{ accounts[ {id, name, targetsCount, firstDegreeCount, secondDegreeCount, pathsCount} ], count, nextPage }`. Company search: pass a company name as `query`, take the account `id` from the result. |
 
 **Tag types.** A tag's `type` is only ever `manual` — a label the customer created and applied (import, attach-tags, campaign names) — or `automatic` — a marker Draftboard stamps on a whole ingested batch, usually the date (e.g. `20-Apr-2026`). There is **no queryable `icp` tag type** (`?type=icp` is rejected); aim at an "ICP" group by its tag **name**, not a type.
+
+**Resolve a person (the drill).** To answer anything about ONE named person — "is X already a target", "what's X's id", "who can introduce me to X" — resolve them: `resolve_target` with their `linkedinUrl` → take `target.id` → `get_target_connections` for the connectors. Two calls. Never page `list_targets` looking for someone: that is one request per 100 targets, and `list_targets` omits targets whose paths have not been computed yet, so a saved person can look missing when they are not. For a batch of URLs use `check_if_connected`, which does the same lookup per URL.
 
 **Scope by company (the drill).** To answer "who do I have at company X" or "best intros to my targets at company X", do NOT page the whole target list. Resolve the company first: `list_accounts` with `query: "<company name>"` → take the `id` → then `list_targets` with `accountId` (the saved leads there) or `find_top_paths` with `accountId` (the ranked intro opportunities there). Two calls, not 45 pages.
 

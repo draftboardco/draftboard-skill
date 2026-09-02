@@ -67,6 +67,10 @@ boolean flag — not a rating, and not the same axis. `set_connector_tier` never
 teammate already know them directly — `degree` "1st"), `hasPaths`, `pathsCount`, `topConnector`,
 `topRank`. Newly uploaded people may need a moment for enrichment.
 
+For **one** person, `resolve_target` with their `linkedinUrl` is the single call: it says whether
+they are a target and hands back the `targetId`, then `get_target_connections` gives the connectors.
+Either way, never page `list_targets` to look someone up.
+
 ### 9. ✅ Show me my top paths right now
 `find_top_paths` (defaults to status `new`, sorted by connector `rank`). This is the headline use
 case — keep it scoped with `tagNames`/`minTargetMaxRank` on large lists.

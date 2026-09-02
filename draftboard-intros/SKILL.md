@@ -28,7 +28,8 @@ know how complete the answer is. Drop to **thin tools** only when no outcome too
 |-------------|-----|
 | Best intro opportunities right now | `find_top_paths` |
 | Paths through a specific teammate's network | `find_top_paths` with `ownerIds` |
-| Whether they're already connected to people (by LinkedIn URL) | `check_if_connected` |
+| Whether ONE named person is already a target (and their `targetId`) | `resolve_target` — one lookup, never a page walk |
+| Whether they're already connected to people (by LinkedIn URL) | `check_if_connected` (a batch of URLs) |
 | Progress of intros (new / completed / stopped) | `intro_status_overview` |
 | Cold email that name-drops a mutual connection | `find_top_paths` (`includeRankDetails: true`), use `rankDetails` |
 | Who can a specific connector introduce me to? | `get_connector_intros` (connector-first) |
@@ -95,9 +96,13 @@ closest workarounds — is in `references/user-stories.md`. The tool catalog wit
 - **Connector by name (e.g. "paths through Jane Smith").** The API filters connections by team
   member (`ownerIds`), not by connector name. Run `find_top_paths`, then filter the opportunities
   client-side on the `connector` field, and say you did.
-- **Newly imported people need time.** After `import_targets` / `check_if_connected`, enrichment and
-  path scoring are asynchronous — if a person shows `isTarget: false` or `hasPaths: false`
-  immediately, tell the user to re-check shortly rather than concluding there's no path.
+- **Newly imported people need time — an import is accepted, not finished.** Draftboard processes
+  an import batch asynchronously, so right after `import_targets` / `check_if_connected` the person
+  may not be findable yet (`check_if_connected` reports them as `import_pending`), and path scoring
+  takes longer still. Tell the user to re-check shortly; never report them as missing or path-less
+  on the strength of that first look. `resolve_target` is the right way to re-check — it finds a
+  saved target as soon as the batch lands, whereas `list_targets` will not show them until a path
+  has been computed. So "not in `list_targets`" never means "not saved".
 - **Name-drop responsibly.** A connector's `rankDetails`/`scoreDetails` (shared history) describes the
   **connector↔target** relationship — why *that* connector can introduce *that* target. It is **not**
   the user's own background and not the user↔connector history. Use it for the warm line about that
