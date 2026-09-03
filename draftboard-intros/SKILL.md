@@ -96,13 +96,17 @@ closest workarounds — is in `references/user-stories.md`. The tool catalog wit
 - **Connector by name (e.g. "paths through Jane Smith").** The API filters connections by team
   member (`ownerIds`), not by connector name. Run `find_top_paths`, then filter the opportunities
   client-side on the `connector` field, and say you did.
-- **Newly imported people need time — an import is accepted, not finished.** Draftboard processes
-  an import batch asynchronously, so right after `import_targets` / `check_if_connected` the person
-  may not be findable yet (`check_if_connected` reports them as `import_pending`), and path scoring
-  takes longer still. Tell the user to re-check shortly; never report them as missing or path-less
-  on the strength of that first look. `resolve_target` is the right way to re-check — it finds a
-  saved target as soon as the batch lands, whereas `list_targets` will not show them until a path
-  has been computed. So "not in `list_targets`" never means "not saved".
+- **An import is accepted, not finished — and there are TWO waits, not one.** Getting this wrong is
+  how a perfectly good import gets reported to the user as a failure.
+  1. **The target row: about half a minute.** Confirm with `resolve_target`, which finds a saved
+     target as soon as the batch lands. `check_if_connected` reports it as `import_pending` until
+     then and tells you when to look again.
+  2. **Its warm-intro paths: minutes** — 14 minutes on a large network. Only after that does the
+     person appear in `list_targets` or carry connectors.
+
+  So `list_targets` answers neither question right after an import: it returns only targets that
+  **already have a path**. "Not in `list_targets`" never means "not saved" — say the paths are
+  still being computed, and re-check, rather than reporting the person as missing or path-less.
 - **Name-drop responsibly.** A connector's `rankDetails`/`scoreDetails` (shared history) describes the
   **connector↔target** relationship — why *that* connector can introduce *that* target. It is **not**
   the user's own background and not the user↔connector history. Use it for the warm line about that
