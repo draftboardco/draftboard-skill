@@ -1,0 +1,17 @@
+{
+  "name": "draftboard",
+  "owner": { "name": "Draftboard" },
+  "plugins": [
+    {
+      "name": "draftboard",
+      "source": "./",
+      "description": "Warm introductions from your own network, inside your assistant: who can introduce you to a prospect, how strong the connection is, and what to say.",
+      "mcpServers": {
+        "draftboard": {
+          "type": "http",
+          "url": "https://mcp.draftboard.com"
+        }
+      }
+    }
+  ]
+}

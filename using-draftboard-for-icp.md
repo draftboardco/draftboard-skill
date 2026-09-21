@@ -68,12 +68,12 @@ discovered**. It is *not* the thing that invents the list for you.
 
 1. **Make sure your ICP is labeled in Draftboard** — either from the app's AI matching, or by adding
    a set of ideal-fit names and tagging them as your ICP segment.
-2. **Connect the assistant** (one-time) — see the [setup guide](./draftboard-intros/references/setup.md).
+2. **Connect the assistant** (one-time) — see the [setup guide](./skills/draftboard-intros/references/setup.md).
 3. **Ask**, naming your segment: *"Using Draftboard, show me my best warm intros into my ICP, and
    tell me which I'm already connected to."*
 
 That's it — you've turned a profile into a prioritized, warm outreach plan.
 
 For the full list of questions the skill can answer, see the
-[playbook](./draftboard-intros/references/user-stories.md). For the broader how-to, the
+[playbook](./skills/draftboard-intros/references/user-stories.md). For the broader how-to, the
 [main guide](./README.md).

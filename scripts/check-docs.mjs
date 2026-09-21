@@ -371,22 +371,22 @@ function tableFindings(file, lines) {
  * ------------------------------------------------------------------ */
 
 const REQUIRED = [
-  ['draftboard-intros/SKILL.md', 'absence guidance: read `relationships` as `?? []`', /relationships \?\? \[\]/i],
-  ['draftboard-intros/SKILL.md', 'absence guidance: read `scoreDetails` as `?? []`', /scoreDetails \?\? \[\]/i],
-  ['draftboard-intros/SKILL.md', 'absence is not a negative signal ("promote on the signal, never demote on its absence")', /promote on the signal[,;] never demote on its absence/i],
-  ['draftboard-intros/SKILL.md', '"star" is pinned to `rating`', /"star" (means|=) (the )?`?rating/i],
+  ['skills/draftboard-intros/SKILL.md', 'absence guidance: read `relationships` as `?? []`', /relationships \?\? \[\]/i],
+  ['skills/draftboard-intros/SKILL.md', 'absence guidance: read `scoreDetails` as `?? []`', /scoreDetails \?\? \[\]/i],
+  ['skills/draftboard-intros/SKILL.md', 'absence is not a negative signal ("promote on the signal, never demote on its absence")', /promote on the signal[,;] never demote on its absence/i],
+  ['skills/draftboard-intros/SKILL.md', '"star" is pinned to `rating`', /"star" (means|=) (the )?`?rating/i],
 
-  ['draftboard-intros/references/tools.md', 'absence guidance: read `relationships` as `?? []`', /relationships \?\? \[\]/i],
-  ['draftboard-intros/references/tools.md', 'absence guidance: read `scoreDetails` as `?? []`', /scoreDetails \?\? \[\]/i],
-  ['draftboard-intros/references/tools.md', 'absent means the key is missing, never `[]`', /it is never `\[\]`/i],
-  ['draftboard-intros/references/tools.md', 'absence is not a negative signal ("promote on the signal; never demote on its absence")', /promote on the signal[,;] never demote on its absence/i],
-  ['draftboard-intros/references/tools.md', '`scoreDetails` carries the human-readable summary', /scoreDetails[^.]{0,40}human-readable summary/i],
-  ['draftboard-intros/references/tools.md', '`ratings: [1]` is the Hidden scope', /`ratings: \[1\]`[\s\S]{0,80}?hidden/i],
-  ['draftboard-intros/references/tools.md', '"star" is pinned to `rating`', /"star" (means|=) (the )?`?rating/i],
+  ['skills/draftboard-intros/references/tools.md', 'absence guidance: read `relationships` as `?? []`', /relationships \?\? \[\]/i],
+  ['skills/draftboard-intros/references/tools.md', 'absence guidance: read `scoreDetails` as `?? []`', /scoreDetails \?\? \[\]/i],
+  ['skills/draftboard-intros/references/tools.md', 'absent means the key is missing, never `[]`', /it is never `\[\]`/i],
+  ['skills/draftboard-intros/references/tools.md', 'absence is not a negative signal ("promote on the signal; never demote on its absence")', /promote on the signal[,;] never demote on its absence/i],
+  ['skills/draftboard-intros/references/tools.md', '`scoreDetails` carries the human-readable summary', /scoreDetails[^.]{0,40}human-readable summary/i],
+  ['skills/draftboard-intros/references/tools.md', '`ratings: [1]` is the Hidden scope', /`ratings: \[1\]`[\s\S]{0,80}?hidden/i],
+  ['skills/draftboard-intros/references/tools.md', '"star" is pinned to `rating`', /"star" (means|=) (the )?`?rating/i],
 
-  ['draftboard-intros/references/user-stories.md', 'absence guidance: read `relationships` as `?? []`', /relationships \?\? \[\]/i],
-  ['draftboard-intros/references/user-stories.md', 'absence guidance: read `scoreDetails` as `?? []`', /scoreDetails \?\? \[\]/i],
-  ['draftboard-intros/references/user-stories.md', 'absence is not a negative signal ("promote on the signal, never demote on its absence")', /promote on the signal[,;] never demote on its absence/i],
+  ['skills/draftboard-intros/references/user-stories.md', 'absence guidance: read `relationships` as `?? []`', /relationships \?\? \[\]/i],
+  ['skills/draftboard-intros/references/user-stories.md', 'absence guidance: read `scoreDetails` as `?? []`', /scoreDetails \?\? \[\]/i],
+  ['skills/draftboard-intros/references/user-stories.md', 'absence is not a negative signal ("promote on the signal, never demote on its absence")', /promote on the signal[,;] never demote on its absence/i],
 ];
 
 /* ------------------------------------------------------------------ */
@@ -411,6 +411,47 @@ const excerpt = (s, max = 110) => {
   return one.length > max ? one.slice(0, max - 1) + '…' : one;
 };
 
+/* ------------------------------------------------------------------ *
+ * Manifest agreement
+ *
+ * The hosted server's address is declared twice, because the two plugin
+ * ecosystems want it in different files: `mcp.json` (the open plugin schema
+ * Codex/ChatGPT read) and `.claude-plugin/marketplace.json` (Claude Code).
+ * Nothing makes them agree, and a mismatch is silent — one ecosystem would
+ * quietly point at the wrong host. `MCP_RESOURCE_URI` is one-way once
+ * customers connect against it, so "silent" is the expensive kind here.
+ *
+ * Skipped entirely when a path argument is given: an ad-hoc run over one
+ * markdown file is not making a claim about the manifests.
+ * ------------------------------------------------------------------ */
+function checkManifests() {
+  const read = (rel) => {
+    try {
+      return JSON.parse(readFileSync(join(ROOT, rel), 'utf8'));
+    } catch (err) {
+      return { __error: rel + ': ' + err.message };
+    }
+  };
+
+  const mcp = read('mcp.json');
+  const market = read('.claude-plugin/marketplace.json');
+  const bad = [mcp, market].filter((m) => m.__error).map((m) => m.__error);
+  if (bad.length) return bad;
+
+  const fromMcp = mcp?.mcpServers?.draftboard?.url;
+  const entry = (market?.plugins ?? []).find((p) => p?.name === 'draftboard');
+  const fromMarket = entry?.mcpServers?.draftboard?.url;
+
+  const problems = [];
+  if (!fromMcp) problems.push('mcp.json: no mcpServers.draftboard.url');
+  if (!entry) problems.push(".claude-plugin/marketplace.json: no plugin named 'draftboard'");
+  else if (!fromMarket) problems.push('.claude-plugin/marketplace.json: the draftboard plugin declares no mcpServers.draftboard.url');
+  if (fromMcp && fromMarket && fromMcp !== fromMarket) {
+    problems.push('the two manifests disagree on the server address: mcp.json says ' + fromMcp + ', marketplace.json says ' + fromMarket);
+  }
+  return problems;
+}
+
 function main() {
   const files = [];
   for (const target of SCAN) {
@@ -418,6 +459,8 @@ function main() {
     else files.push(target);
   }
   const findings = [];
+
+  const manifestProblems = CHECK_REQUIRED ? checkManifests() : [];
 
   for (const full of files) {
     const rel = CHECK_REQUIRED ? relative(ROOT, full) : shortPath(full);
@@ -473,16 +516,25 @@ function main() {
   });
   unique.sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line || a.id.localeCompare(b.id));
 
-  if (unique.length === 0) {
-    console.log('check-docs: OK — ' + files.length + ' markdown file(s), no violations.');
+  if (manifestProblems.length) {
+    for (const p of manifestProblems) console.log('manifests: ' + p);
+  }
+
+  if (unique.length === 0 && manifestProblems.length === 0) {
+    console.log('check-docs: OK — ' + files.length + ' markdown file(s) and the plugin manifests, no violations.');
     return 0;
+  }
+  if (unique.length === 0) {
+    console.error('\ncheck-docs: FAILED — ' + manifestProblems.length + ' manifest problem(s).');
+    return 1;
   }
 
   for (const f of unique) {
     console.log(f.file + ':' + f.line + ': ' + f.id + ' — "' + excerpt(f.text) + '"');
     console.log('    ' + f.why);
   }
-  console.error('\ncheck-docs: FAILED — ' + unique.length + ' violation(s) in ' + files.length + ' markdown file(s).');
+  console.error('\ncheck-docs: FAILED — ' + unique.length + ' violation(s) in ' + files.length +
+    ' markdown file(s)' + (manifestProblems.length ? ' and ' + manifestProblems.length + ' manifest problem(s)' : '') + '.');
   return 1;
 }
 

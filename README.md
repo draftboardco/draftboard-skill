@@ -85,15 +85,24 @@ You need a [Draftboard](https://draftboard.com) account, and you need to be **si
 browser on this machine** — connecting is approved in the browser, the same way you connect any
 other app. There is nothing to install: no package, no Node, and no API key to copy anywhere.
 
-**The easy way — let Claude set it up for you.** In
-[Claude Code](https://claude.com/claude-code), paste one message:
+**The easy way — install it as a plugin.** One command brings both halves: the skill and the
+connection, already pointed at the right address.
 
-> **Set up the Draftboard intros skill and connection from
-> https://github.com/draftboardco/draftboard-skill**
+**Claude Code**
 
-Claude adds the connection and installs the skill, then hands you back one step it cannot do for
-you: approving the connection in your browser. Once you have, ask:
+```
+/plugin marketplace add draftboardco/draftboard-skill
+/plugin install draftboard@draftboard
+```
+
+**Codex / ChatGPT** — install this repository as a plugin from the Plugins surface; the same
+`skills/` folder and the same server address are picked up from `plugin.json` and `mcp.json`.
+
+Then approve the connection in your browser — the one step nothing can do for you — and ask:
 *"Use Draftboard to show me my top intro opportunities."*
+
+Updates arrive on their own: the plugin follows this repository, so a correction we ship is simply
+there the next time your assistant starts.
 
 <details>
 <summary>Prefer to set it up by hand (or on Claude Desktop / Codex)?</summary>
@@ -126,7 +135,7 @@ at any time from **Settings → Connected apps** — which an API key never allo
 
 Full setup detail — verifying it works, what the approval grants, and the one case where you would
 still run the server yourself — lives in
-[`draftboard-intros/references/setup.md`](./draftboard-intros/references/setup.md).
+[`draftboard-intros/references/setup.md`](./skills/draftboard-intros/references/setup.md).
 
 ## Setup (for your assistant)
 
@@ -157,7 +166,7 @@ through a specific teammate's network, name-drop material for cold outreach, int
 new in beta — company-first discovery (find people by role at named companies, then pick who to keep).
 Ten of the twelve common "how do I…" questions are answered directly today — the rest the
 assistant solves by combining the basics. The full playbook is in
-[`draftboard-intros/references/user-stories.md`](./draftboard-intros/references/user-stories.md).
+[`draftboard-intros/references/user-stories.md`](./skills/draftboard-intros/references/user-stories.md).
 
 **Not yet, and the honest workaround:**
 
@@ -180,11 +189,11 @@ except to Draftboard's own API. Nothing about your network is sent to any third 
 
 ## Where to go next
 
-- Just want to use it → finish [setup](./draftboard-intros/references/setup.md) and start asking.
+- Just want to use it → finish [setup](./skills/draftboard-intros/references/setup.md) and start asking.
 - Working an ideal-customer push → [Using Draftboard intros for your ICP](./using-draftboard-for-icp.md).
-- Curious what each capability does → the [playbook](./draftboard-intros/references/user-stories.md).
+- Curious what each capability does → the [playbook](./skills/draftboard-intros/references/user-stories.md).
 - Building on top of it → the full tool list in
-  [`references/tools.md`](./draftboard-intros/references/tools.md), and the superseded
+  [`references/tools.md`](./skills/draftboard-intros/references/tools.md), and the superseded
   self-installed server at [`draftboardco/mcp`](https://github.com/draftboardco/mcp).
 - The Draftboard Integration API itself → <https://intros.draftboard.com/api>.
 - About Draftboard → [draftboard.com](https://draftboard.com).

@@ -1,0 +1,6 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "draftboard",
+  "version": "1.0.0",
+  "description": "Warm introductions from your own network, inside your assistant: who can introduce you to a prospect, how strong the connection is, and what to say."
+}
