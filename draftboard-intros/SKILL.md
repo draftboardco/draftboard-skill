@@ -1,23 +1,26 @@
 ---
 name: draftboard-intros
-description: Use when the user wants warm introductions, intro paths, or network-based outreach to a person or company — discovering who can introduce them to a prospect, checking if they're already connected to someone, finding their best intro opportunities, tracking intro progress, or writing outreach that name-drops mutual connections. Triggers include "warm intro", "who can introduce me to", "am I connected to", "best paths", "intro opportunities", "namedrop mutual connection", and any work against Draftboard targets/connections. Requires the @draftboard/mcp server.
+description: Use when the user wants warm introductions, intro paths, or network-based outreach to a person or company — discovering who can introduce them to a prospect, checking if they're already connected to someone, finding their best intro opportunities, tracking intro progress, or writing outreach that name-drops mutual connections. Triggers include "warm intro", "who can introduce me to", "am I connected to", "best paths", "intro opportunities", "namedrop mutual connection", and any work against Draftboard targets/connections. Requires the hosted Draftboard MCP server at https://mcp.draftboard.com.
 ---
 
 # Draftboard intros
 
-Help the user get **warm introductions** using their Draftboard network data, via the
-`@draftboard/mcp` server. Draftboard's core idea is **relationship proximity**: the shortest path
-from the user to a prospect (a **target**) runs through a mutual **connection** (a **connector**),
-scored 0–100 by **rank**.
+Help the user get **warm introductions** using their Draftboard network data, through Draftboard's
+hosted MCP server (`https://mcp.draftboard.com`). Draftboard's core idea is **relationship
+proximity**: the shortest path from the user to a prospect (a **target**) runs through a mutual
+**connection** (a **connector**), scored 0–100 by **rank**.
 
 ## Before anything else
 
-1. Confirm the MCP server is available. If its tools are missing, point the user to
-   `references/setup.md` (install `github:draftboardco/mcp`, set `DRAFTBOARD_API_KEY`).
+1. Confirm the Draftboard tools are available. If they are missing, the connection has not been
+   made — point the user to `references/setup.md`: it is one address and a browser approval, with
+   nothing to install.
 2. Call **`get_me`** once to confirm whose account this is (`customer.name` / `customer.user`). For
    "through my teammate" requests, the team roster is here too: match the teammate's name in
    `customer.teamMembers[]` and pass their `id` as `ownerIds`.
-3. **Never** print or ask the user to paste their API key in chat; it lives in the MCP env block.
+3. If a call comes back unauthorized, do **not** retry it and do not ask for a key — there is
+   none. The connection was revoked or expired; tell the user to reconnect (`references/setup.md`),
+   or to check **Settings → Connected apps** if they did not expect it to be gone.
 
 ## Pick the right tool
 

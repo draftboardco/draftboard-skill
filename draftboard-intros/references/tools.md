@@ -1,6 +1,6 @@
 # Tool catalog
 
-The `@draftboard/mcp` server exposes 22 tools: 6 thin (1:1 with the Integration API), 9 extended,
+Draftboard's MCP server exposes 23 tools: 6 thin (1:1 with the Integration API), 10 extended,
 4 prospecting (BETA company-first discovery), and 3 outcome tools (composed for real jobs). Prefer
 outcome tools.
 

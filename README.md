@@ -15,8 +15,9 @@ This package is two pieces that work together:
 - **The skill** — the know-how that teaches your assistant *how* to use Draftboard well: which
   question maps to which action, how to read a relationship score, how to be honest about what it
   found.
-- **The connector (MCP server)** — the secure link between your assistant and your Draftboard
-  account. It runs on your machine; your API key never leaves it.
+- **The connection (MCP server)** — the secure link between your assistant and your Draftboard
+  account. Draftboard runs it; you approve it in your browser, it is scoped to the permissions you
+  granted, and you can withdraw it at any time from Settings → Connected apps.
 
 You install both once. After that, you just talk.
 
@@ -78,44 +79,43 @@ sequences them for you.
 
 ---
 
-## Getting started (one-time, ~5 minutes)
+## Getting started (one-time, ~2 minutes)
 
-You need a [Draftboard](https://draftboard.com) account with API access (Team plan for full
-read/write; Pro is read-only) and your API key from **Settings → API keys** in the
-[Draftboard app](https://intros.draftboard.com) — it looks like `db-api_…`. You'll also need
-[Claude Code](https://claude.com/claude-code) and **Node.js 20+** — Node is what provides the `npx`
-that runs the connector, so grab it at [nodejs.org](https://nodejs.org) if you don't have it.
+You need a [Draftboard](https://draftboard.com) account, and you need to be **signed in to it in a
+browser on this machine** — connecting is approved in the browser, the same way you connect any
+other app. There is nothing to install: no package, no Node, and no API key to copy anywhere.
 
-**The easy way — let Claude set it up for you.** No config files, no terminal. In
+**The easy way — let Claude set it up for you.** In
 [Claude Code](https://claude.com/claude-code), paste one message:
 
-> **Set up the Draftboard intros MCP and skill from
-> https://github.com/draftboardco/draftboard-skill — my API key is `db-api_your_key_here`.**
+> **Set up the Draftboard intros skill and connection from
+> https://github.com/draftboardco/draftboard-skill**
 
-Claude follows the [setup steps for your assistant](#setup-for-your-assistant) below — it adds the
-connector, installs the skill, and confirms it works. When it says it's ready, ask:
-*"Use Draftboard to show me my top intro opportunities."* That's the whole setup.
+Claude adds the connection and installs the skill, then hands you back one step it cannot do for
+you: approving the connection in your browser. Once you have, ask:
+*"Use Draftboard to show me my top intro opportunities."*
 
 <details>
 <summary>Prefer to set it up by hand (or on Claude Desktop / Codex)?</summary>
 
-**1. Connect your assistant to Draftboard.** Add this to your assistant's tool configuration
-(Claude Code `.mcp.json`, Claude Desktop config, or the Codex equivalent), pasting your key:
+**1. Connect your assistant to Draftboard.**
 
-```json
-{
-  "mcpServers": {
-    "draftboard": {
-      "command": "npx",
-      "args": ["-y", "github:draftboardco/mcp"],
-      "env": { "DRAFTBOARD_API_KEY": "db-api_your_key_here" }
-    }
-  }
-}
+```bash
+# Claude Code
+claude mcp add --transport http draftboard https://mcp.draftboard.com
+claude mcp login draftboard
+
+# Codex CLI
+codex mcp add draftboard --url https://mcp.draftboard.com
+codex mcp login draftboard
 ```
 
-On **Codex CLI**, add the same server with one command instead of the JSON above:
-`codex mcp add draftboard --env DRAFTBOARD_API_KEY=db-api_your_key_here -- npx -y github:draftboardco/mcp`.
+**Claude Desktop:** Settings → **Connectors** → **Add** → **Add custom connector** →
+`https://mcp.draftboard.com`, then approve in the browser.
+
+The approval screen shows the permissions being granted and connects the assistant to the account
+you are signed in as. The grant is scoped to those permissions, and you can withdraw it on its own
+at any time from **Settings → Connected apps** — which an API key never allowed.
 
 **2. Add the skill.** Copy the `draftboard-intros/` folder into your assistant's skills directory —
 `~/.claude/skills/` for Claude Code, `~/.codex/skills/` for Codex CLI. Both load the same `SKILL.md`.
@@ -124,7 +124,8 @@ On **Codex CLI**, add the same server with one command instead of the JSON above
 
 </details>
 
-Full setup detail (environment options, verifying it works, switching between accounts) lives in
+Full setup detail — verifying it works, what the approval grants, and the one case where you would
+still run the server yourself — lives in
 [`draftboard-intros/references/setup.md`](./draftboard-intros/references/setup.md).
 
 ## Setup (for your assistant)
@@ -132,22 +133,20 @@ Full setup detail (environment options, verifying it works, switching between ac
 *If you're an AI assistant that a user asked to "set up Draftboard" from this repo, do exactly this,
 then stop and tell them it's ready:*
 
-0. **Check Node is installed.** Run `npx --version` (the server needs Node.js 20+). If it's missing,
-   tell the user to install Node from <https://nodejs.org> and stop until they have — nothing runs
-   without it.
-1. **Add the MCP server.** Configure a stdio MCP server named `draftboard` in the user's client:
-   command `npx`, args `["-y", "github:draftboardco/mcp"]`, env `DRAFTBOARD_API_KEY` = the key the user
-   gave you. On Claude, use your MCP-add command or edit `.mcp.json` / the Claude Desktop config; on
-   Codex CLI, run `codex mcp add draftboard --env DRAFTBOARD_API_KEY=<key> -- npx -y github:draftboardco/mcp`
-   (or edit `~/.codex/config.toml`). **Never print the key back to the user.**
+1. **Add the connection.** Register an MCP server named `draftboard` over **HTTP** at
+   `https://mcp.draftboard.com` — on Claude Code,
+   `claude mcp add --transport http draftboard https://mcp.draftboard.com`; on Codex CLI,
+   `codex mcp add draftboard --url https://mcp.draftboard.com`. There is no key and no environment
+   block: do not ask the user for one.
 2. **Install the skill.** Copy the `draftboard-intros/` folder from this repo into the user's skills
-   directory — `~/.claude/skills/draftboard-intros/` for Claude Code, `~/.codex/skills/draftboard-intros/`
-   for Codex CLI (both load the same `SKILL.md`). If you don't have the files locally, clone
-   `https://github.com/draftboardco/draftboard-skill` first.
-3. **Verify.** Restart the client if the tools aren't loaded yet, then call the `get_me` tool. If it
-   returns the user's name, tell them setup worked and suggest *"Use Draftboard to show me my top
-   intro opportunities."* If the tools are missing → the client needs a restart; if you get `401` →
-   the API key is wrong or expired.
+   directory — `~/.claude/skills/draftboard-intros/` for Claude Code,
+   `~/.codex/skills/draftboard-intros/` for Codex CLI (both load the same `SKILL.md`). If you don't
+   have the files locally, clone `https://github.com/draftboardco/draftboard-skill` first.
+3. **Hand the approval back to the user — you cannot do this part.** Tell them to run
+   `claude mcp login draftboard` (or `codex mcp login draftboard`), which opens the approval screen,
+   and that they must already be signed in to Draftboard in a browser on this machine. Stop here
+   until they say they have approved it; the tools do not exist until they do.
+
 
 ---
 
@@ -184,8 +183,9 @@ except to Draftboard's own API. Nothing about your network is sent to any third 
 - Just want to use it → finish [setup](./draftboard-intros/references/setup.md) and start asking.
 - Working an ideal-customer push → [Using Draftboard intros for your ICP](./using-draftboard-for-icp.md).
 - Curious what each capability does → the [playbook](./draftboard-intros/references/user-stories.md).
-- Building on top of it → the engine and its full tool list:
-  [`@draftboard/mcp`](https://github.com/draftboardco/mcp).
+- Building on top of it → the full tool list in
+  [`references/tools.md`](./draftboard-intros/references/tools.md), and the superseded
+  self-installed server at [`draftboardco/mcp`](https://github.com/draftboardco/mcp).
 - The Draftboard Integration API itself → <https://intros.draftboard.com/api>.
 - About Draftboard → [draftboard.com](https://draftboard.com).
 
