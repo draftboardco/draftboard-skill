@@ -1,7 +1,7 @@
 # User-story playbook
 
 How to solve each documented customer pain with the Draftboard MCP. ✅ = supported today,
-🟡 = partial / workaround, 🚧 = not yet exposed by the Integration API (roadmap).
+🟡 = partial / workaround, 🚧 = not exposed by the Integration API.
 
 ### 1. ✅ Map paths through specific people who I know will intro for me
 For a **named connector**, get their connector id (the `connectorId` on a connection, or a
@@ -20,9 +20,9 @@ search → poll `list_pool` (by its `campaignId`) → `confirm_pool` the good pe
 ### 3. 🟡 Build a target list from my ICP description
 Closer now. If your ICP is "these roles at these companies", `search_accounts({ companies, titles })`
 (BETA) discovers matching people into the pool → `confirm_pool` them into targets. You still bring the
-company list and the titles (there's no free-text-ICP → company inference yet), and you can
+company list and the titles (there is no free-text-ICP → company inference), and you can
 `import_targets` known LinkedIn URLs directly. Generating the company/target list from a pure text ICP
-remains a roadmap item.
+is not something the API does.
 
 ### 4. ✅ See if teammates are connected to prospects without them doing anything
 `get_target_connections` (or `find_top_paths`) returns `owners` — the team members whose network
@@ -88,7 +88,7 @@ an optional decline reason). (WRITE — host-approved.)
 ### 12. 🟡 History of my intro requests to a given connection (last asked, hit rate, responsiveness)
 `get_connector_intros` shows the current connector-first view — everyone a given connector can
 introduce you to. But per-connector **history/analytics** (last asked, response rate, hit rate) is
-not exposed by the Integration API — that remains a roadmap item.
+not exposed by the Integration API.
 
 ### 13. ✅ Prioritise the connectors who actually work with the target right now
 When several connectors can reach the same target, lead with the ones whose tie is *current*.

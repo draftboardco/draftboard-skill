@@ -168,14 +168,14 @@ Ten of the twelve common "how do I…" questions are answered directly today —
 assistant solves by combining the basics. The full playbook is in
 [`draftboard-intros/references/user-stories.md`](./skills/draftboard-intros/references/user-stories.md).
 
-**Not yet, and the honest workaround:**
+**What it does not do, and the honest workaround:**
 
 - **"Build my target list from a free-text description of my ideal customer."** Partly there: "these
   roles at these companies" now works via the beta company-first search (you name the companies and
-  titles); turning a pure prose ICP into a company list is still on the roadmap.
+  titles); it does not turn a free-text ICP into a company list.
 - **"Let me permanently hide connections I'd never ask."** You can filter them out in the moment;
   saved preferences are managed in the app.
-- **"Show my intro-request history with a given person — hit rate, last asked."** Not exposed yet;
+- **"Show my intro-request history with a given person — hit rate, last asked."** Not exposed:
   you can see current status, not past-request analytics.
 
 **Worth knowing:** a just-added person may need a short while before paths appear — Draftboard is
