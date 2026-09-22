@@ -182,8 +182,11 @@ assistant solves by combining the basics. The full playbook is in
 still enriching them in the background, so "no path yet" can mean "not ready yet." The assistant
 will tell you when that's the case rather than concluding there's no connection.
 
-**Your key stays yours.** The connector runs locally and never logs or transmits your key anywhere
-except to Draftboard's own API. Nothing about your network is sent to any third party.
+**There is no key to leak.** The connection is an approval, not a credential — Draftboard runs the
+server, and your assistant holds a grant scoped to the permissions you approved rather than a key
+that can do everything. You can see what is connected and withdraw it on its own, at any time, from
+**Settings → Connected apps**. The server talks only to Draftboard's own API; no other service sits
+between your assistant and your data.
 
 ---
 
