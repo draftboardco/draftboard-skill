@@ -1,6 +1,8 @@
 {
   "name": "draftboard",
-  "owner": { "name": "Draftboard" },
+  "owner": {
+    "name": "Draftboard"
+  },
   "plugins": [
     {
       "name": "draftboard",
@@ -13,5 +15,6 @@
         }
       }
     }
-  ]
+  ],
+  "description": "Warm introductions from your own Draftboard network, inside your assistant."
 }
