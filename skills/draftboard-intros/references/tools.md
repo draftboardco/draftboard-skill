@@ -13,6 +13,7 @@ strongest connectors. **Expensive** (walks connections per target) — scope it.
 | Arg | Default | Notes |
 |-----|---------|-------|
 | `tagNames` | — | Only targets with these tags |
+| `tagMatch` | `all` | How several `tagNames` combine — `any` = at least one, `all` = every one |
 | `accountId` | — | Only targets at one company (an id from `list_accounts`) — scopes "best intros" to that company |
 | `title` | — | Only targets whose title/position contains this text (case-insensitive) — e.g. "best intros to my Head-of-Sales targets" |
 | `ownerIds` | — | Only paths through these team members — ids from `get_me.customer.teamMembers[]` (match by name) |
@@ -64,6 +65,7 @@ Summarize targets by status, with a per-tag breakdown.
 | Arg | Default | Notes |
 |-----|---------|-------|
 | `tagNames` | — | Scope to these tags |
+| `tagMatch` | `all` | How several `tagNames` combine — `any` = at least one, `all` = every one |
 
 Returns `{ total, counted, byStatus{}, byTag{}, truncated }`.
 
@@ -73,7 +75,7 @@ Returns `{ total, counted, byStatus{}, byTag{}, truncated }`.
 |------|------|---------|
 | `get_me` | — | `{ customer{ id, name, user{ id, firstName, lastName, linkedinUrl }, teamMembers[]{ id, firstName, lastName, linkedinUrl } } }` — `teamMembers[].id` is a valid `ownerIds` value |
 | `list_tags` | `query?, type?, pageNumber?, resultPerPage?` | `{ tags[], count, nextPage }`. `type` is `manual` (you created it) or `automatic` (a system batch/date marker). |
-| `list_targets` | `updatedSince?, tagIds?, tagNames?, statuses?, accountId?, title?, pageNumber?, resultPerPage?` | `{ targets[], count, nextPage }` — **only targets that already have at least one path**; `accountId` filters to one company (id from `list_accounts`); `title` is a case-insensitive title/position substring |
+| `list_targets` | `updatedSince?, tagIds?, tagNames?, tagMatch?, statuses?, accountId?, title?, pageNumber?, resultPerPage?` | `{ targets[], count, nextPage }` — **only targets that already have at least one path**; `accountId` filters to one company (id from `list_accounts`); `title` is a case-insensitive title/position substring |
 | `resolve_target` | `linkedinUrl (required)` | `{ found: true, target }` or `{ found: false, linkedinUrl, note }`. One direct lookup — finds **any** non-archived target, including one just imported with no paths yet. `found: false` is an answer, not an error. |
 | `import_targets` | `linkedinUrls (required), tags?` | `{ imported, notImported, …, note, confirmWith, pathsWith }`. **Accepted, not finished.** The row appears in ~30s — confirm it with `resolve_target`, never with `list_targets` (an empty result there is not a failed import). Paths take minutes; poll `get_target_connections`. |
 | `get_target_connections` | `targetId (required), updatedSince?, ownerIds?, pageNumber?, resultPerPage?` | `{ connections[], count, nextPage }` — each connection has `score`, `scoreDetails`, `owners`, and **may** have `relationships` / `relationshipDetails` (see **Field notes**) |
@@ -175,7 +177,7 @@ A different mode from everything above: instead of working over people you alrea
 | Tool | Args | Notes |
 |------|------|-------|
 | `search_accounts` ⚠ | `companies (1–50)`, `titles (1–20)`, `name?` | BETA. `companies` = domains (`acme.com`) or `linkedin.com/company/…` URLs; `titles` = the persona. Returns `{ campaignId, imported, notImportedAccounts }`. People surface in the pool **asynchronously** — there is no completion signal. |
-| `list_pool` | `campaignId?, accountId?, tagIds?, query?, pageNumber?, resultPerPage?` | Discovered prospects awaiting confirm/reject: `{ prospects[ {id, name, linkedinUrl, headline, accountName, source, tags} ], count, nextPage }`. Filter by the `campaignId` from `search_accounts`. Empty right after a search = "not ready yet". |
+| `list_pool` | `campaignId?, accountId?, tagIds?, tagMatch?, query?, pageNumber?, resultPerPage?` | Discovered prospects awaiting confirm/reject: `{ prospects[ {id, name, linkedinUrl, headline, accountName, source, tags} ], count, nextPage }`. Filter by the `campaignId` from `search_accounts`. Empty right after a search = "not ready yet". |
 | `confirm_pool` ⚠ | `ids (1+)` | Promote pool prospects into targets (capacity-checked, idempotent). Returns `{ confirmedCount, remainingCapacity }`. After this they're real targets — `find_top_paths` / `list_targets` include them. |
 | `reject_pool` ⚠ | `ids (1+)` | Discard pending pool prospects (soft-delete status-`new`). Idempotent. |
 
