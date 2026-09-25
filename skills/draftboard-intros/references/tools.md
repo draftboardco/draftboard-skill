@@ -46,7 +46,7 @@ person usually comes back `import_pending` on this call rather than with an id.
 | `tags` | — | Tags for imported targets |
 
 Returns `{ results[ { linkedinUrl, status, isTarget, targetId?, degree?, directlyConnected,
-hasPaths, pathsCount?, topConnector?, topRank?, note? } ], telemetry{ checked, resolved, imported },
+hasPaths, pathsCount?, topConnector?, topRank?, note? } ], telemetry{ checked, resolved, importRequested, importPending },
 warnings? }`. `directlyConnected` is true when the target's `degree` is `"1st"` (you/a teammate
 already know them directly). Freshly imported people may not have paths until enrichment finishes.
 
