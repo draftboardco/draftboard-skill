@@ -72,13 +72,16 @@ they are a target and hands back the `targetId`, then `get_target_connections` g
 Either way, never page `list_targets` to look someone up.
 
 ### 9. ✅ Show me my top paths right now
-`find_top_paths` (defaults to status `new`, sorted by connector `rank`). This is the headline use
-case — keep it scoped with `tagNames`/`minTargetMaxRank` on large lists.
+`find_top_paths` — one ranked, server-floored call, already excluding paths you've requested. This
+is the headline use case; scope with `accountId`/`tagNames`/`title`/`ownerIds` when the user means a
+specific subset rather than the whole book.
 
 ### 10. ✅ Cold email that name-drops a mutual connection
-`find_top_paths` with `includeRankDetails: true`. For the chosen target, take the top connector and
-weave a real `rankDetails` fact ("you both worked at Apalon") into the opener. Only use facts the
-tool actually returned.
+`find_top_paths` with `includeRankDetails: true`. For the chosen target, take its one returned
+connector and weave a real `rankDetails` fact ("you both worked at Apalon") into the opener. Only use
+facts the tool actually returned, and check `basis`: for `other_quality_signal` there is no
+work/school overlap to name-drop — draw the line from `rankDetails` instead and don't imply a shared
+employer or school.
 
 ### 11. ✅ Track and update the status of requested intros
 `intro_status_overview` → counts of `new` / `completed` / `stopped`, optionally per tag. You can also
@@ -91,13 +94,14 @@ introduce you to. But per-connector **history/analytics** (last asked, response 
 not exposed by the Integration API.
 
 ### 13. ✅ Prioritise the connectors who actually work with the target right now
-When several connectors can reach the same target, lead with the ones whose tie is *current*.
-`find_top_paths` (or `get_target_connections`) returns `relationships` per opportunity — zero or more
-of `current_colleague`, `former_colleague`, `university_classmate` — plus `relationshipDetails`, the
-structured records behind the shared history (shared `employment` with an overlap window, shared
-`education`, or `mutualConnections.count`). Sort your shortlist so `current_colleague` comes first,
-then `former_colleague` with the most recent `overlapEndDate`, then the rest, and open the ask with a
-fact you can point at ("you two are both at Acme in Engineering").
+`find_top_paths` returns only the strongest path per target — for SEVERAL connectors on the SAME
+target, use `get_target_connections` instead. Either way, each result carries `relationships` — zero
+or more of `current_colleague`, `former_colleague`, `university_classmate` — plus
+`relationshipDetails`, the structured records behind the shared history (shared `employment` with an
+overlap window, shared `education`, or `mutualConnections.count`). When you have several connectors
+for one target, sort so `current_colleague` comes first, then `former_colleague` with the most recent
+`overlapEndDate`, then the rest, and open the ask with a fact you can point at ("you two are both at
+Acme in Engineering").
 
 **But read the silence correctly.** Both keys are present when Draftboard holds that signal for the
 pair and **absent when it does not** — read them as `relationships ?? []`. A connector without
@@ -110,6 +114,9 @@ current colleagues — the other 9 aren't classified, not disqualified."
 
 ---
 
-**Coverage honesty.** Outcome tools return a `telemetry` block. Always tell the user what was
-actually scanned (e.g. "top 25 of 142 targets") and, when `truncated` is true, offer the
-`nextSuggestedFilter`. Don't present a partial scan as exhaustive.
+**Coverage honesty.** Outcome tools return a `telemetry` block — read it before claiming
+completeness. `find_top_paths` reports `total`/`returned`/`truncated` (e.g. "returned 20 of 142
+qualifying paths" — raise `limit` or narrow with `accountId`/`tagNames`/`title` when `truncated` is
+true); `intro_status_overview` reports `total`/`counted`/`truncated`; `check_if_connected` reports
+`checked`/`resolved`/`importRequested`/`importPending`. Don't present a partial or still-unresolved
+answer as exhaustive or final.

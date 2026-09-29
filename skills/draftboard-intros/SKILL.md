@@ -29,8 +29,9 @@ know how complete the answer is. Drop to **thin tools** only when no outcome too
 
 | User wants… | Use |
 |-------------|-----|
-| Best intro opportunities right now | `find_top_paths` |
+| Best intro opportunities right now | `find_top_paths` — one ranked call, one path per target |
 | Paths through a specific teammate's network | `find_top_paths` with `ownerIds` |
+| Several connectors for the SAME target (not just the strongest) | `get_target_connections` — `find_top_paths` returns only one (the strongest) path per target |
 | Whether ONE named person is already a target (and their `targetId`) | `resolve_target` — one lookup, never a page walk |
 | Whether they're already connected to people (by LinkedIn URL) | `check_if_connected` (a batch of URLs) |
 | Progress of intros (new / completed / stopped) | `intro_status_overview` |
@@ -74,15 +75,22 @@ closest workarounds — is in `references/user-stories.md`. The tool catalog wit
 
 ## How to work
 
-- **Scope expensive tools.** `find_top_paths` walks each target's connections. Always narrow with
-  `tagNames`, `statuses`, `minTargetMaxRank`, `ownerIds`, `accountId`, or `title` before running on a
-  big account. If the returned `telemetry.truncated` is true, tell the user the result is partial and
-  follow `telemetry.nextSuggestedFilter`.
+- **`find_top_paths` is one ranked call, not a scan.** It asks the server for the strongest open
+  paths — one per target, already excluding paths you've requested — and returns at most `limit`
+  (default 20, max 100). Narrow with `accountId`, `tagNames`, `title`, or `ownerIds` to focus the
+  ranked list on what the user actually asked about, not to bound cost. If `telemetry.truncated` is
+  true, more qualifying paths exist than were returned — say so, and raise `limit` or narrow further
+  rather than presenting the page as everything.
 - **Company questions → scope by `accountId`, don't scan.** For "who do I have at company X" or
   "best intros at company X", resolve the company with `list_accounts` (name → `id`) and pass
-  `accountId` to `list_targets` / `find_top_paths`. `find_top_paths` only scans a bounded top-N of
-  targets by rank, so a company's lower-ranked or 2nd-degree targets can otherwise be missed
-  entirely — the `accountId` scope avoids both the miss and the slow full scan.
+  `accountId` to `list_targets` / `find_top_paths`. Without it, `find_top_paths` ranks across the
+  whole book and returns only `limit` opportunities — a company's real but weaker paths can be
+  crowded out by stronger ones elsewhere. `accountId` scopes the ranking pool to that company so
+  they surface.
+- **Describe `basis` honestly.** Every opportunity from `find_top_paths` carries a `basis`:
+  `overlap_both_sides` and `overlap_connector_target` are a real shared employer or school — call
+  those strong. `other_quality_signal` is a real, qualifying path with **no** work/school overlap —
+  describe it only from `rankDetails` (e.g. "you both know 500 people") and never call it "strong".
 - **Company-first discovery is a slow async loop (BETA, Team/Enterprise).** `search_accounts`
   (companies + titles) only *starts* a search and returns a `campaignId` — it does not return people.
   Found people arrive in the pool asynchronously with no completion signal: after a short wait, read
@@ -94,8 +102,8 @@ closest workarounds — is in `references/user-stories.md`. The tool catalog wit
   calls, read API keys from config/files, query a database, or brute-force by paging thousands of
   records. Don't import people as targets just to answer an exploratory question (that changes the
   user's data) without explicit approval.
-- **Be honest about coverage.** Always surface counts from `telemetry` (e.g. "scanned the top 25 of
-  142 targets"). Never imply you searched everything when you didn't.
+- **Be honest about coverage.** Always surface counts from `telemetry` (e.g. "returned 20 of 142
+  qualifying paths"). Never imply you saw every opportunity when `truncated` is true.
 - **Connector by name (e.g. "paths through Jane Smith").** The API filters connections by team
   member (`ownerIds`), not by connector name. Run `find_top_paths`, then filter the opportunities
   client-side on the `connector` field, and say you did.

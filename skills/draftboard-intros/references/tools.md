@@ -7,31 +7,48 @@ outcome tools.
 ## Outcome tools
 
 ### `find_top_paths`
-Best warm-intro opportunities right now. Ranks targets by best path, then fetches each one's
-strongest connectors. **Expensive** (walks connections per target) — scope it.
+Your strongest **open** warm-intro paths — paths you haven't requested yet — ranked and floored
+**server-side**, one per target: a shared employer or school on both sides first, then between the
+connector and the target only, then other quality signals (see `basis` below). **One call**; it
+never walks targets or connections, so it needs no "scope it, it's expensive" caution.
 
 | Arg | Default | Notes |
 |-----|---------|-------|
 | `tagNames` | — | Only targets with these tags |
 | `tagMatch` | `all` | How several `tagNames` combine — `any` = at least one, `all` = every one |
-| `accountId` | — | Only targets at one company (an id from `list_accounts`) — scopes "best intros" to that company |
+| `accountId` | — | Only targets at one company (an id from `list_accounts`) — scopes the ranking pool to that company |
 | `title` | — | Only targets whose title/position contains this text (case-insensitive) — e.g. "best intros to my Head-of-Sales targets" |
 | `ownerIds` | — | Only paths through these team members — ids from `get_me.customer.teamMembers[]` (match by name) |
-| `statuses` | `["new"]` | `new` / `completed` / `stopped` |
-| `minTargetMaxRank` | `0` | Skip weakly-reachable targets |
-| `minRank` | `0` | Drop weak connectors |
-| `limit` | `20` | Max opportunities returned |
-| `maxTargetsScanned` | `25` | How many targets to fetch connections for |
-| `connectorsPerTarget` | `3` | Top connectors per target |
+| `limit` | `20` | Max opportunities returned (1–100) |
 | `includeRankDetails` | `true` | Shared-history reasons (for name-drops) |
 | `includeRelationships` | `true` | Pass through `relationships` + `relationshipDetails` when the API returns any |
 
-Returns `{ opportunities[], telemetry{ targetsMatched, targetsScanned, connectionsFetched,
-opportunitiesFound, truncated, nextSuggestedFilter? }, warnings? }`. Each opportunity:
-`{ target, targetLinkedinUrl, targetCompany, targetMaxRank, connector, connectorLinkedinUrl,
-connectorPosition, rank, rankDetails?, relationships?, relationshipDetails?, owners[] }`. The last
-two are present only when the API holds that signal for the pair; their absence is **not** evidence
-against the connector (see **Field notes**).
+**Deprecated, still accepted:** `statuses`, `minTargetMaxRank`, `minRank`, `maxTargetsScanned`,
+`connectorsPerTarget`. Passing one is never a validation error — the server ranks and floors on its
+own now, so these are silently ignored and named in `telemetry.ignoredParameters`. For several
+connectors on the SAME target (what `connectorsPerTarget` used to control), call
+`get_target_connections` instead — `find_top_paths` returns exactly one (the strongest) path per
+target.
+
+Returns `{ opportunities[], telemetry{ total, returned, truncated, ignoredParameters? } }`. `total`
+is how many paths matched your filters (before `limit`); `returned` is what came back;
+`ignoredParameters` is only present when a deprecated arg was passed. Each opportunity:
+`{ introId, targetId, target, targetLinkedinUrl, targetCompany, targetHeadline, targetMaxRank,
+connector, connectorLinkedinUrl, connectorPosition, rank, rankDetails?, relationships?,
+relationshipDetails?, basis, owners[] }`. `targetMaxRank` is kept only for compatibility with
+callers of the old shape — it now always equals that row's own `rank`, since there is exactly one
+path per target; read `rank`. `relationships`/`relationshipDetails` are present only when the API
+holds that signal for the pair; their absence is **not** evidence against the connector (see
+**Field notes**).
+
+**`basis` — why a path ranks where it does, one of:**
+- `overlap_both_sides` — a shared employer or school on **both** sides of the path (a
+  connector↔target overlap, and also a teammate↔connector tie through the same place).
+- `overlap_connector_target` — a shared employer or school between the connector and the target
+  only.
+- `other_quality_signal` — a real, qualifying path with **no** work/school overlap. Describe these
+  only from `rankDetails` (e.g. "you both know 500 people") — never call one "strong"; that word
+  belongs to the first two bases.
 
 ### `check_if_connected`
 Given LinkedIn URLs, reports whether the user already has warm paths to each. One direct lookup per
