@@ -13,14 +13,19 @@ to, with scores and shared-history reasons. For **teammates**, use `find_top_pat
 Two modes now. **Already have people at those companies?** `list_accounts` gives the account-level
 view — every company where you have targets, with 1st-/2nd-degree reach — and you can filter targets
 to one company (`accountId`) or to a title/role (`title`). **Don't have the names yet?** Company-first
-discovery is now in the API (BETA, Team/Enterprise): `search_accounts({ companies, titles })` starts a
-search → poll `list_pool` (by its `campaignId`) → `confirm_pool` the good people into targets → then
-`find_top_paths` for warm intros to them.
+discovery is now in the API (BETA): `search_accounts({ companies, titles })` starts a
+search whose people are normally added as targets automatically (up to a limit per company, paths
+charged) → `find_top_paths` for warm intros to them; the rest wait in `list_pool` (by its `campaignId`)
+for `confirm_pool` / `reject_pool`.
 
 ### 3. 🟡 Build a target list from my ICP description
 Closer now. If your ICP is "these roles at these companies", `search_accounts({ companies, titles })`
-(BETA) discovers matching people into the pool → `confirm_pool` them into targets. You still bring the
-company list and the titles (there is no free-text-ICP → company inference), and you can
+(BETA) discovers matching people and normally adds them as targets automatically (paths charged); the
+rest wait in the pool for `confirm_pool`. You still bring the
+company list and the titles (there is no free-text-ICP → company inference). If the ICP is "these roles,
+reachable through people I know", `search_supporters({ supporters, titles })` (BETA) searches those
+people's networks instead; everyone it finds waits in `list_pool` (by its `campaignId`) and nothing is
+charged until you `confirm_pool` the ones you want — confirming takes them on and charges their paths. You can also
 `import_targets` known LinkedIn URLs directly. Generating the company/target list from a pure text ICP
 is not something the API does.
 

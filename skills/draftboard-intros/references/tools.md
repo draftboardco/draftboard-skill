@@ -1,7 +1,7 @@
 # Tool catalog
 
-Draftboard's MCP server exposes 23 tools: 6 thin (1:1 with the Integration API), 10 extended,
-4 prospecting (BETA company-first discovery), and 3 outcome tools (composed for real jobs). Prefer
+Draftboard's MCP server exposes 24 tools: 6 thin (1:1 with the Integration API), 10 extended,
+5 prospecting (BETA discovery), and 3 outcome tools (composed for real jobs). Prefer
 outcome tools.
 
 ## Outcome tools
@@ -184,18 +184,34 @@ user's. Use them only for the warm line about that specific intro; never present
 about the user. The teammate↔connector tie (`owners[].score`) is a strength number only — no
 shared-history reason is exposed for it, so don't invent one.
 
-## Prospecting — company-first discovery (⚠ BETA · Team/Enterprise)
+## Prospecting — company-first discovery (⚠ BETA)
 
 A different mode from everything above: instead of working over people you already track, these find
-**new** people by role at named companies. The loop is asynchronous:
+**new** people by role at named companies. Most of them become targets without a review step; the loop
+for the rest is asynchronous:
 
 `search_accounts` → (wait) → `list_pool` → `confirm_pool` / `reject_pool`
 
 | Tool | Args | Notes |
 |------|------|-------|
-| `search_accounts` ⚠ | `companies (1–50)`, `titles (1–20)`, `name?` | BETA. `companies` = domains (`acme.com`) or `linkedin.com/company/…` URLs; `titles` = the persona. Returns `{ campaignId, imported, notImportedAccounts }`. People surface in the pool **asynchronously** — there is no completion signal. |
-| `list_pool` | `campaignId?, accountId?, tagIds?, tagMatch?, query?, pageNumber?, resultPerPage?` | Discovered prospects awaiting confirm/reject: `{ prospects[ {id, name, linkedinUrl, headline, accountName, source, tags} ], count, nextPage }`. Filter by the `campaignId` from `search_accounts`. Empty right after a search = "not ready yet". |
-| `confirm_pool` ⚠ | `ids (1+)` | Promote pool prospects into targets (capacity-checked, idempotent). Returns `{ confirmedCount, remainingCapacity }`. After this they're real targets — `find_top_paths` / `list_targets` include them. |
+| `search_accounts` ⚠ | `companies (1–50)`, `titles (1–20)`, `name?` | BETA. `companies` = domains (`acme.com`) or `linkedin.com/company/…` URLs; `titles` = the persona. Returns `{ campaignId, imported, notImportedAccounts }`. People found are normally added as targets **automatically**, up to a limit per company, and their warm paths are charged; only the ones beyond that limit wait in the pool. Everyone arrives **asynchronously** — there is no completion signal. Not idempotent: every call launches a new search. |
+| `list_pool` | `campaignId?, accountId?, tagIds?, tagMatch?, query?, pageNumber?, resultPerPage?` | Discovered prospects awaiting confirm/reject: `{ prospects[ {id, name, linkedinUrl, headline, accountName, source, tags} ], count, nextPage }`. Filter by the `campaignId` from `search_accounts` or `search_supporters` — this is where a supporter search's results arrive. Empty right after a search = results may not be ready yet; it does not mean the search has finished. |
+| `confirm_pool` ⚠ | `ids (1+)` | Promote pool prospects into targets (idempotent). Every requested id still in the pool is confirmed — nothing is held back. Returns `{ confirmedCount, remainingCapacity }`; `remainingCapacity` is informational, not a limit. After this they're real targets and their warm paths are charged — tell the user before confirming. `find_top_paths` / `list_targets` include them. |
 | `reject_pool` ⚠ | `ids (1+)` | Discard pending pool prospects (soft-delete status-`new`). Idempotent. |
 
-**The loop.** "Find me Heads of Sales at Acme and Globex" → `search_accounts({ companies: ["acme.com", "globex.com"], titles: ["Head of Sales"] })` → keep the returned `campaignId` → after a short wait `list_pool({ campaignId })` → `confirm_pool` the good `ids` into targets → then `find_top_paths` for warm intros to them. Confirming spends the plan's target capacity, so confirm only what the user wants.
+**The loop.** "Find me Heads of Sales at Acme and Globex" → tell the user the people found are normally added as targets automatically and their paths are charged → `search_accounts({ companies: ["acme.com", "globex.com"], titles: ["Head of Sales"] })` once → keep the returned `campaignId` → after a short wait `find_top_paths` / `list_targets` for the ones already added, and `list_pool({ campaignId })` for the ones held back → `confirm_pool` only the `ids` the user wants (charged the same way), `reject_pool` the rest.
+
+### Supporter-first discovery (⚠ BETA)
+
+Finds new people by role **inside the networks of people the user knows**, instead of at named
+companies. Nobody it finds becomes a target on their own: everyone waits in the pool for review, and
+nothing is charged until they are confirmed.
+
+| Tool | Args | Notes |
+|------|------|-------|
+| `search_supporters` ⚠ | `supporters (1+)`, `titles (1+)`, `companies?`, `name?` | BETA. `supporters` = LinkedIn profile URLs (`linkedin.com/in/…`); `titles` = the persona; `companies` = domains or `linkedin.com/company/…` URLs, omit to search the whole network. Returns `{ status, errors, campaignId, importedSupporters, notImportedSupporters }` — `importedSupporters` counts the supporters accepted, not people found. **Everyone found waits in the pool** — launching charges nothing. Someone rejected earlier stays rejected. People arrive **over time** — no completion signal. Not idempotent: every call launches a new search. Does not change anyone's rating. |
+
+**The loop.** Launch it once and keep the `campaignId` → check back later with
+`list_pool({ campaignId })` (empty soon after = may not be ready yet, not finished) → **before `confirm_pool`**, tell the
+user plainly: "confirming takes these people on as targets, and their warm paths are charged like any
+target's" → `confirm_pool` the `ids` they want in one batch, `reject_pool` the rest.

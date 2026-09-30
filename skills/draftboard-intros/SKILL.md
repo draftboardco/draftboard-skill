@@ -46,7 +46,8 @@ know how complete the answer is. Drop to **thin tools** only when no outcome too
 | My saved leads at a specific company | `list_accounts` (name→`id`), then `list_targets` with `accountId` |
 | My saved leads with a specific title/role | `list_targets` with `title` (a title/position substring; optionally + `accountId`) |
 | Best intros to my targets at a specific company | `list_accounts` (name→`id`), then `find_top_paths` with `accountId` |
-| Find NEW people by role at companies I name (I don't have the names) | `search_accounts` (BETA) → wait → `list_pool` → `confirm_pool` |
+| Find NEW people by role at companies I name (I don't have the names) | `search_accounts` (BETA; adds targets automatically, paths charged) → wait → `find_top_paths`; the rest via `list_pool` → `confirm_pool` |
+| Find NEW people by role through people I know ("who can Alice get me to?") | `search_supporters` (BETA; nothing charged, everyone found waits in the pool) → later `list_pool` (its `campaignId`) → tell the user confirming takes them on and charges their paths → `confirm_pool` the ones they want |
 | Move an intro forward (sent / made / declined) | `set_intro_status` |
 | Raw target / connection / tag data | `list_targets`, `get_target_connections`, `list_tags` |
 | Add new people / supporters to track | `import_targets`, `import_supporters` |
@@ -91,12 +92,25 @@ closest workarounds — is in `references/user-stories.md`. The tool catalog wit
   `overlap_both_sides` and `overlap_connector_target` are a real shared employer or school — call
   those strong. `other_quality_signal` is a real, qualifying path with **no** work/school overlap —
   describe it only from `rankDetails` (e.g. "you both know 500 people") and never call it "strong".
-- **Company-first discovery is a slow async loop (BETA, Team/Enterprise).** `search_accounts`
+- **Company-first discovery adds targets on its own — say so before launching (BETA).** `search_accounts`
   (companies + titles) only *starts* a search and returns a `campaignId` — it does not return people.
-  Found people arrive in the pool asynchronously with no completion signal: after a short wait, read
-  them with `list_pool` (filter by that `campaignId`), then `confirm_pool` the good ones into targets.
-  An empty pool right after a search means "not ready yet", not "nothing found". Confirming spends the
-  plan's target capacity — confirm only people the user actually wants; `reject_pool` the rest.
+  People it finds are normally added as targets **automatically**, up to a limit per company, and their
+  warm paths are charged like any target's; only the ones beyond that limit wait in the pool for review.
+  Everyone arrives asynchronously with no completion signal. The review step: `list_pool` (filter by that
+  `campaignId`), then `confirm_pool` the ones the user wants (charged the same way) and `reject_pool` the
+  rest. An empty pool right after a search means results may not be ready yet — it does not mean the search has finished. **Every call
+  launches a new search** — never repeat one to retry or to check on it.
+- **Supporter-first discovery puts everyone in the pool — the charge comes at `confirm_pool` (BETA).**
+  `search_supporters` (supporters' LinkedIn profile URLs + titles, optionally companies) searches the
+  networks of people the user knows. Launching it charges nothing and takes nobody on: everyone it
+  finds waits in the pool for review. Someone the user rejected earlier stays rejected. It returns
+  `status`, `errors`, a `campaignId` and counts of supporters accepted / not accepted — not the people
+  found, who arrive over time with no completion signal. Check back later with `list_pool` (filter by
+  that `campaignId`); an empty pool soon after means results may not be ready yet — it does not mean the search has finished. **Before
+  `confirm_pool`,** tell the user that confirming takes those people on as targets and their warm paths
+  are then charged; confirm the ones they want in one batch and `reject_pool` the rest. **Every call
+  launches a new search** — never repeat one to retry or to check on it. It does not change anyone's
+  rating.
 - **Stay inside these tools.** They are the only sanctioned way to reach Draftboard. If a request
   isn't possible with them, say so plainly and stop (or point to the app) — never run raw API
   calls, read API keys from config/files, query a database, or brute-force by paging thousands of
