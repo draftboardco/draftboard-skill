@@ -27,7 +27,7 @@ reachable through people I know", `search_supporters({ supporters, titles })` (B
 people's networks instead; everyone it finds waits in `list_pool` (by its `campaignId`) and nothing is
 charged until you `confirm_pool` the ones you want — confirming takes them on and charges their paths. You can also
 `import_targets` known LinkedIn URLs directly. Generating the company/target list from a pure text ICP
-is not something the API does.
+is not something the API does. A text ICP *can* score the people a supporter search finds — see story 14.
 
 ### 4. ✅ See if teammates are connected to prospects without them doing anything
 `get_target_connections` (or `find_top_paths`) returns `owners` — the team members whose network
@@ -41,8 +41,8 @@ Draftboard org with their networks already scanned.
 
 ### 6. ✅ Exclude connections I'm not close enough to ask
 Rate them 1 star: `set_connector_tier` with `rating: 1` ("don't ask") drops that connector from
-warm-path results and hides them from the default `list_supporters`. Review who you hid with
-`list_supporters({ ratings: [1] })`, and un-hide by rating them 2–5 (or `tier: 0` to clear).
+warm-path results and hides them from the default `list_network_connections`. Review who you hid with
+`list_network_connections({ ratings: [1] })`, and un-hide by rating them 2–5 (or `tier: 0` to clear).
 *(Legacy: `set_connector_excluded` reaches the same hidden state, but its sync runs one way —
 `excluded: false` does **not** clear a `rating: 1`, so re-rate rather than un-exclude.)*
 (WRITE — the host approves the call.)
@@ -54,16 +54,16 @@ Closeness is a **star rating, 1..5, higher is better**: **5 = ★★★★★ "a
 - **SET** — `set_connector_tier` with `rating` (`5` = closest, `1` = don't ask, `tier: 0` = clear).
   This is what "star this person", "rate them" and "prioritize them as a supporter" all mean
   (WRITE — host-approved).
-- **SEARCH** — `list_supporters`: every supporter carries its `rating`, and `ratings: [5]` (or
+- **SEARCH** — `list_network_connections`: every supporter carries its `rating`, and `ratings: [5]` (or
   `[4,5]`) is "only my warmest".
 
 Note that `rating: 1` also **hides** the connector, so the default listing omits them — `ratings: [1]`
 is how you review who you hid. Higher-rated connectors are prioritized in ranking, so "only see paths
-through my closest" ≈ work from that filtered `list_supporters`. `tier` is the same setting spelled as
+through my closest" ≈ work from that filtered `list_network_connections`. `tier` is the same setting spelled as
 the raw wire number (0..5, **lower is better**: 1 = "ask anytime" … 5 = "don't ask", 0 = clear) and
 still works everywhere; send exactly one of the two, and never describe a tier in stars.
 
-*(Legacy: `set_connector_preferred` sets, and `list_supporters` with `preferred` searches, a separate
+*(Legacy: `set_connector_preferred` sets, and `list_network_connections` with `preferred` searches, a separate
 boolean flag — not a rating, and not the same axis. `set_connector_tier` never writes it, so
 `rating: 5` does not mark someone preferred. Prefer the rating.)*
 
@@ -116,6 +116,23 @@ current-colleague signal, never demote or hide the rest, and always fall back to
 the warm line (it carries the human-readable summary, and is itself omitted when there is nothing to
 say — read it as `scoreDetails ?? []`). Say what you sorted on, e.g. "3 of these 12 are flagged as
 current colleagues — the other 9 aren't classified, not disqualified."
+
+### 14. ✅ Find VPs of Sales through my investors at B2B SaaS companies in the US
+Three parts: *who to ask* (the investors), *which role* (VP of Sales), *what kind of company* (the
+ideal customer). Launch once:
+`search_supporters({ supporters: [the investors' linkedin.com/in/… URLs], titles: ["VP of Sales"],
+icp: { industry: "B2B SaaS", location: "US" } })` and keep the `campaignId`. Put in `icp` only what the
+user said — here industry and location; do not guess a company size they never gave, and do not add
+`companies` (the tool refuses `icp` with `companies`). Launching charges nothing and hides nobody:
+everyone found waits in the pool, each scored against the ideal customer.
+
+Later, `list_pool({ campaignId, minIcpFit: 50 })` returns the people who fit (a `percent` of 50 or
+more is the product's threshold — do not invent another), each with a `reason`. People the search
+could not assess are left out of that filtered list — they are not a poor fit, and a plain
+`list_pool({ campaignId })` still shows them. Show the user the fits with their reasons, say that the
+rest scored lower or could not be assessed, tell them confirming takes those people on as targets and
+charges their paths, and `confirm_pool` only the `ids` they pick. Empty soon after launch = not ready
+yet, not "nobody fits".
 
 ---
 
