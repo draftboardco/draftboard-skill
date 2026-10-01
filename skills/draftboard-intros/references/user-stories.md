@@ -41,8 +41,8 @@ Draftboard org with their networks already scanned.
 
 ### 6. ✅ Exclude connections I'm not close enough to ask
 Rate them 1 star: `set_connector_tier` with `rating: 1` ("don't ask") drops that connector from
-warm-path results and hides them from the default `list_supporters`. Review who you hid with
-`list_supporters({ ratings: [1] })`, and un-hide by rating them 2–5 (or `tier: 0` to clear).
+warm-path results and hides them from the default `list_network_connections`. Review who you hid with
+`list_network_connections({ ratings: [1] })`, and un-hide by rating them 2–5 (or `tier: 0` to clear).
 *(Legacy: `set_connector_excluded` reaches the same hidden state, but its sync runs one way —
 `excluded: false` does **not** clear a `rating: 1`, so re-rate rather than un-exclude.)*
 (WRITE — the host approves the call.)
@@ -54,16 +54,16 @@ Closeness is a **star rating, 1..5, higher is better**: **5 = ★★★★★ "a
 - **SET** — `set_connector_tier` with `rating` (`5` = closest, `1` = don't ask, `tier: 0` = clear).
   This is what "star this person", "rate them" and "prioritize them as a supporter" all mean
   (WRITE — host-approved).
-- **SEARCH** — `list_supporters`: every supporter carries its `rating`, and `ratings: [5]` (or
+- **SEARCH** — `list_network_connections`: every supporter carries its `rating`, and `ratings: [5]` (or
   `[4,5]`) is "only my warmest".
 
 Note that `rating: 1` also **hides** the connector, so the default listing omits them — `ratings: [1]`
 is how you review who you hid. Higher-rated connectors are prioritized in ranking, so "only see paths
-through my closest" ≈ work from that filtered `list_supporters`. `tier` is the same setting spelled as
+through my closest" ≈ work from that filtered `list_network_connections`. `tier` is the same setting spelled as
 the raw wire number (0..5, **lower is better**: 1 = "ask anytime" … 5 = "don't ask", 0 = clear) and
 still works everywhere; send exactly one of the two, and never describe a tier in stars.
 
-*(Legacy: `set_connector_preferred` sets, and `list_supporters` with `preferred` searches, a separate
+*(Legacy: `set_connector_preferred` sets, and `list_network_connections` with `preferred` searches, a separate
 boolean flag — not a rating, and not the same axis. `set_connector_tier` never writes it, so
 `rating: 5` does not mark someone preferred. Prefer the rating.)*
 

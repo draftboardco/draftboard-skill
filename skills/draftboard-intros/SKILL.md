@@ -38,9 +38,10 @@ know how complete the answer is. Drop to **thin tools** only when no outcome too
 | Cold email that name-drops a mutual connection | `find_top_paths` (`includeRankDetails: true`), use `rankDetails` |
 | Who can a specific connector introduce me to? | `get_connector_intros` (connector-first) |
 | **Star / rate a connection** ("star this person", "mark them as a go-to", "rate them 5") | `set_connector_tier` with **`rating` 1–5, higher is better** (5 = ★★★★★ "ask anytime", 1 = ★ "don't ask" — which also hides them; `tier: 0` clears) |
-| **List my starred / closest connections** ("who did I rate 5", "my go-tos") | `list_supporters` with **`ratings: [5]`** (or `[4,5]`) |
+| **My / a teammate's / the team's LinkedIn connections** ("my connections", "who does Alice know", export a network) | `get_me` → take the id (yours: `customerProfileId`; a teammate's: `teamMembers[].id`; if the name fits several people or none exactly, ask which one) → `list_network_connections` with `ownerIds`, paging until `nextPage` is 0; each row's `owners` says who on the team knows them |
+| **List my starred / closest connections** ("who did I rate 5", "my go-tos") | `list_network_connections` with **`ratings: [5]`** (or `[4,5]`) |
 | Hide connections I'd never ask | `set_connector_tier` with `rating: 1` — a rating of 1 hides them |
-| List the ones I already hid | `list_supporters` with `ratings: [1]` — the rating filter *is* the "Hidden" scope; the default listing omits them |
+| List the ones I already hid | `list_network_connections` with `ratings: [1]` — the rating filter *is* the "Hidden" scope; the default listing omits them |
 | How do these two know each other? (connector ↔ target) | `get_target_connections` / `get_connector_intros` / `find_top_paths` — read `relationships` + `relationshipDetails`, and fall back to `scoreDetails` |
 | Account-level view (companies with targets) | `list_accounts` |
 | My saved leads at a specific company | `list_accounts` (name→`id`), then `list_targets` with `accountId` |
@@ -61,7 +62,7 @@ The `preferred` flag is a third thing entirely and is **not** a star.
 **Legacy — `preferred` and `excluded` (still wired, still work).** The product moved both onto the
 rating, so reach for `set_connector_tier` / `ratings` for every set-and-search intent, and use these
 two only when the user explicitly asks for those flags:
-- `set_connector_preferred` (set) and `list_supporters` with `preferred` (search) drive a separate
+- `set_connector_preferred` (set) and `list_network_connections` with `preferred` (search) drive a separate
   boolean column. `set_connector_tier` **never writes it** — `rating: 5` does not mark someone
   preferred, and marking someone preferred does not give them a rating.
 - `set_connector_excluded` hides a connector like `rating: 1` does, but the sync runs **one way**:
