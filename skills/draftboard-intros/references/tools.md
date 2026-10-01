@@ -90,7 +90,7 @@ Returns `{ total, counted, byStatus{}, byTag{}, truncated }`.
 
 | Tool | Args | Returns |
 |------|------|---------|
-| `get_me` | — | `{ customer{ id, name, user{ id, firstName, lastName, linkedinUrl }, teamMembers[]{ id, firstName, lastName, linkedinUrl } } }` — `teamMembers[].id` is a valid `ownerIds` value |
+| `get_me` | — | `{ customer{ id, name, user{ id, firstName, lastName, linkedinUrl }, teamMembers[]{ id, firstName, lastName, linkedinUrl }, credits } }` — `teamMembers[].id` is a valid `ownerIds` value; `credits` is the team's credit balance (writes are refused only at 0; missing = unknown, not 0) |
 | `list_tags` | `query?, type?, pageNumber?, resultPerPage?` | `{ tags[], count, nextPage }`. `type` is `manual` (you created it) or `automatic` (a system batch/date marker). |
 | `list_targets` | `updatedSince?, tagIds?, tagNames?, tagMatch?, statuses?, accountId?, title?, pageNumber?, resultPerPage?` | `{ targets[], count, nextPage }` — **only targets that already have at least one path**; `accountId` filters to one company (id from `list_accounts`); `title` is a case-insensitive title/position substring |
 | `resolve_target` | `linkedinUrl (required)` | `{ found: true, target }` or `{ found: false, linkedinUrl, note }`. One direct lookup — finds **any** non-archived target, including one just imported with no paths yet. `found: false` is an answer, not an error. |
