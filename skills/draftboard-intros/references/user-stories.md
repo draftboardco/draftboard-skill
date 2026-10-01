@@ -27,7 +27,7 @@ reachable through people I know", `search_supporters({ supporters, titles })` (B
 people's networks instead; everyone it finds waits in `list_pool` (by its `campaignId`) and nothing is
 charged until you `confirm_pool` the ones you want — confirming takes them on and charges their paths. You can also
 `import_targets` known LinkedIn URLs directly. Generating the company/target list from a pure text ICP
-is not something the API does.
+is not something the API does. A text ICP *can* score the people a supporter search finds — see story 14.
 
 ### 4. ✅ See if teammates are connected to prospects without them doing anything
 `get_target_connections` (or `find_top_paths`) returns `owners` — the team members whose network
@@ -116,6 +116,23 @@ current-colleague signal, never demote or hide the rest, and always fall back to
 the warm line (it carries the human-readable summary, and is itself omitted when there is nothing to
 say — read it as `scoreDetails ?? []`). Say what you sorted on, e.g. "3 of these 12 are flagged as
 current colleagues — the other 9 aren't classified, not disqualified."
+
+### 14. ✅ Find VPs of Sales through my investors at B2B SaaS companies in the US
+Three parts: *who to ask* (the investors), *which role* (VP of Sales), *what kind of company* (the
+ideal customer). Launch once:
+`search_supporters({ supporters: [the investors' linkedin.com/in/… URLs], titles: ["VP of Sales"],
+icp: { industry: "B2B SaaS", location: "US" } })` and keep the `campaignId`. Put in `icp` only what the
+user said — here industry and location; do not guess a company size they never gave, and do not add
+`companies` (the tool refuses `icp` with `companies`). Launching charges nothing and hides nobody:
+everyone found waits in the pool, each scored against the ideal customer.
+
+Later, `list_pool({ campaignId, minIcpFit: 50 })` returns the people who fit (a `percent` of 50 or
+more is the product's threshold — do not invent another), each with a `reason`. People the search
+could not assess are left out of that filtered list — they are not a poor fit, and a plain
+`list_pool({ campaignId })` still shows them. Show the user the fits with their reasons, say that the
+rest scored lower or could not be assessed, tell them confirming takes those people on as targets and
+charges their paths, and `confirm_pool` only the `ids` they pick. Empty soon after launch = not ready
+yet, not "nobody fits".
 
 ---
 

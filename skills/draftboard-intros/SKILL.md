@@ -48,6 +48,7 @@ know how complete the answer is. Drop to **thin tools** only when no outcome too
 | Best intros to my targets at a specific company | `list_accounts` (name→`id`), then `find_top_paths` with `accountId` |
 | Find NEW people by role at companies I name (I don't have the names) | `search_accounts` (BETA; adds targets automatically, paths charged) → wait → `find_top_paths`; the rest via `list_pool` → `confirm_pool` |
 | Find NEW people by role through people I know ("who can Alice get me to?") | `search_supporters` (BETA; nothing charged, everyone found waits in the pool) → later `list_pool` (its `campaignId`) → tell the user confirming takes them on and charges their paths → `confirm_pool` the ones they want |
+| …and only at companies like my ideal customer ("VPs of Sales at B2B SaaS companies in the US, through my investors") | `search_supporters` with `icp` (only what the user said; not with `companies`) → later `list_pool` (`campaignId` + `minIcpFit: 50`) → show the user who fits → `confirm_pool` the ones they pick |
 | Move an intro forward (sent / made / declined) | `set_intro_status` |
 | Raw target / connection / tag data | `list_targets`, `get_target_connections`, `list_tags` |
 | Add new people / supporters to track | `import_targets`, `import_supporters` |
@@ -111,6 +112,17 @@ closest workarounds — is in `references/user-stories.md`. The tool catalog wit
   are then charged; confirm the ones they want in one batch and `reject_pool` the rest. **Every call
   launches a new search** — never repeat one to retry or to check on it. It does not change anyone's
   rating.
+- **An ideal customer scores everyone a supporter search finds — it hides nobody.** `search_supporters`
+  takes an optional `icp` (`industry`, `companySize`, `location`, `description`, at least one). Take
+  it **only from what the user said** — never infer or fill in an ideal customer they did not
+  describe. It cannot be combined with `companies`. Each pool row then carries `icpFits`
+  (`campaignId`, `percent` 0–100, `reason`); no `percent` means the search **could not assess** that
+  person — not a poor fit, and not 0. A person **fits** when `percent` is 50 or more — that is the
+  product's threshold; do not invent others. The pool returns everyone whatever their fit; to keep a
+  review short, read `list_pool({ campaignId, minIcpFit: 50 })` (`minIcpFit` needs `campaignId`, and
+  leaves out the people the search could not assess) rather than paging through everyone. Show the
+  user who fits and say the rest are a poor fit or could not be assessed; confirm only the people
+  they choose — never on the fit alone.
 - **Stay inside these tools.** They are the only sanctioned way to reach Draftboard. If a request
   isn't possible with them, say so plainly and stop (or point to the app) — never run raw API
   calls, read API keys from config/files, query a database, or brute-force by paging thousands of
