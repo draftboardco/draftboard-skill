@@ -32,6 +32,7 @@ know how complete the answer is. Drop to **thin tools** only when no outcome too
 | Best intro opportunities right now | `find_top_paths` — one ranked call, one path per target |
 | Paths through a specific teammate's network | `find_top_paths` with `ownerIds` |
 | Several connectors for the SAME target (not just the strongest) | `get_target_connections` — `find_top_paths` returns only one (the strongest) path per target |
+| **Paths only through people I'd actually ask** ("use my supporters", "only my 4–5 star people") | `find_top_paths` with **`ratings: [4,5]`** (2–5; one call — never cross-check a starred list against targets by hand). For one person: `get_target_connections` with `ratings` |
 | Whether ONE named person is already a target (and their `targetId`) | `resolve_target` — one lookup, never a page walk |
 | Whether they're already connected to people (by LinkedIn URL) | `check_if_connected` (a batch of URLs) |
 | Progress of intros (new / completed / stopped) | `intro_status_overview` |

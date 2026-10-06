@@ -19,6 +19,7 @@ never walks targets or connections, so it needs no "scope it, it's expensive" ca
 | `accountId` | — | Only targets at one company (an id from `list_accounts`) — scopes the ranking pool to that company |
 | `title` | — | Only targets whose title/position contains this text (case-insensitive) — e.g. "best intros to my Head-of-Sales targets" |
 | `ownerIds` | — | Only paths through these team members — ids from `get_me.customer.teamMembers[]` (match by name) |
+| `ratings` | — | Only paths through connectors **you** rated with one of these stars, `2`–`5`, higher is better — `[4,5]` = "paths through people I would actually ask". Your own rating, also with `ownerIds`. Unrated connectors are left out while it is set. `1` is refused: a connector you hid is never a strongest path |
 | `limit` | `20` | Max opportunities returned (1–100) |
 | `includeRankDetails` | `true` | Shared-history reasons (for name-drops) |
 | `includeRelationships` | `true` | Pass through `relationships` + `relationshipDetails` when the API returns any |
@@ -35,7 +36,8 @@ is how many paths matched your filters (before `limit`); `returned` is what came
 `ignoredParameters` is only present when a deprecated arg was passed. Each opportunity:
 `{ introId, targetId, target, targetLinkedinUrl, targetCompany, targetHeadline, targetMaxRank,
 connector, connectorLinkedinUrl, connectorPosition, rank, rankDetails?, relationships?,
-relationshipDetails?, basis, owners[] }`. `targetMaxRank` is kept only for compatibility with
+relationshipDetails?, basis, owners[], connectorRating? }`. `connectorRating` is **your** star rating of the
+connector (1–5, higher is better), absent when you have not rated them — unrated is not a low rating. `targetMaxRank` is kept only for compatibility with
 callers of the old shape — it now always equals that row's own `rank`, since there is exactly one
 path per target; read `rank`. `relationships`/`relationshipDetails` are present only when the API
 holds that signal for the pair; their absence is **not** evidence against the connector (see
@@ -95,7 +97,7 @@ Returns `{ total, counted, byStatus{}, byTag{}, truncated }`.
 | `list_targets` | `updatedSince?, tagIds?, tagNames?, tagMatch?, statuses?, accountId?, title?, pageNumber?, resultPerPage?` | `{ targets[], count, nextPage }` — **only targets that already have at least one path**; `accountId` filters to one company (id from `list_accounts`); `title` is a case-insensitive title/position substring |
 | `resolve_target` | `linkedinUrl (required)` | `{ found: true, target }` or `{ found: false, linkedinUrl, note }`. One direct lookup — finds **any** non-archived target, including one just imported with no paths yet. `found: false` is an answer, not an error. |
 | `import_targets` | `linkedinUrls (required), tags?` | `{ imported, notImported, …, note, confirmWith, pathsWith }`. **Accepted, not finished.** The row appears in ~30s — confirm it with `resolve_target`, never with `list_targets` (an empty result there is not a failed import). Paths take minutes; poll `get_target_connections`. |
-| `get_target_connections` | `targetId (required), updatedSince?, ownerIds?, pageNumber?, resultPerPage?` | `{ connections[], count, nextPage }` — each connection has `score`, `scoreDetails`, `owners`, and **may** have `relationships` / `relationshipDetails` (see **Field notes**) |
+| `get_target_connections` | `targetId (required), updatedSince?, ownerIds?, ratings?, pageNumber?, resultPerPage?` | `{ connections[], count, nextPage }` — each connection has `score`, `scoreDetails`, `owners`, `rating` (**your** star rating of the connector, 1–5, higher is better; absent when unrated), and **may** have `relationships` / `relationshipDetails` (see **Field notes**). `ratings` (1–5, e.g. `[4,5]`) keeps only paths through connectors you rated so; `ratings: [1]` returns the ones you hid |
 | `list_accounts` | `query?, connectionDegree?, pageNumber?, resultPerPage?` | `{ accounts[ {id, name, targetsCount, firstDegreeCount, secondDegreeCount, pathsCount} ], count, nextPage }`. Company search: pass a company name as `query`, take the account `id` from the result. |
 
 **Tag types.** A tag's `type` is only ever `manual` — a label the customer created and applied (import, attach-tags, campaign names) — or `automatic` — a marker Draftboard stamps on a whole ingested batch, usually the date (e.g. `20-Apr-2026`). There is **no queryable `icp` tag type** (`?type=icp` is rejected); aim at an "ICP" group by its tag **name**, not a type.

@@ -56,10 +56,14 @@ Closeness is a **star rating, 1..5, higher is better**: **5 = ★★★★★ "a
   (WRITE — host-approved).
 - **SEARCH** — `list_network_connections`: every supporter carries its `rating`, and `ratings: [5]` (or
   `[4,5]`) is "only my warmest".
+- **PATHS** — `find_top_paths` with `ratings: [4,5]` is "my best intros, only through people I would
+  actually ask", in one call; for one person, `get_target_connections` with `ratings`. Each path
+  carries your rating (`connectorRating` / `rating`). Never rebuild this by crossing a starred list
+  against targets by hand.
 
 Note that `rating: 1` also **hides** the connector, so the default listing omits them — `ratings: [1]`
-is how you review who you hid. Higher-rated connectors are prioritized in ranking, so "only see paths
-through my closest" ≈ work from that filtered `list_network_connections`. `tier` is the same setting spelled as
+is how you review who you hid. A rating filters; it does not reorder — `find_top_paths` still ranks
+by relationship strength within whatever the filter keeps. `tier` is the same setting spelled as
 the raw wire number (0..5, **lower is better**: 1 = "ask anytime" … 5 = "don't ask", 0 = clear) and
 still works everywhere; send exactly one of the two, and never describe a tier in stars.
 
