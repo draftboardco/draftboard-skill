@@ -138,6 +138,26 @@ rest scored lower or could not be assessed, tell them confirming takes those peo
 charges their paths, and `confirm_pool` only the `ids` they pick. Empty soon after launch = not ready
 yet, not "nobody fits".
 
+### 15. ✅ Work through a group: my investors, my close friends
+**Label who people are, then use the group.** "Show me paths to Stripe through our investors":
+`list_accounts({ query: "Stripe" })` → `find_top_paths({ accountId, connectorLabels: ["investor"] })`.
+Several groups at once: `connectorLabels: ["investor", "advisor"], connectorLabelsMatch: "any"`.
+Each path carries `connectorLabels`, so the answer can say why that connector ("Anna — Investor").
+
+- **How many first** — "how many investors do I know?" is `get_label_counts`, one call; its number
+  equals the `count` that `list_network_connections({ labels: ["investor"] })` returns next. A count of
+  0 means nobody has been labelled yet — offer to label people, never say "you know no investors".
+- **Label a person** — `set_connector_labels({ connectorId, add: ["close_friend"] })`. Close friend,
+  family and mentor are the caller's own; investor, customer, advisor, partner and do-not-contact
+  are shared with the team. "Make her a supporter" is a rating (`set_connector_tier`), not a label.
+- **Label a company** — "Sequoia is an investor": `find_network_companies({ query: "Sequoia" })` →
+  show every row with its `connectorsCount` → `set_company_labels({ companyId, add: ["investor"] })`
+  for the rows the user picks. Everyone in the network who works there now carries the label.
+- **Do not contact** marks people and hides nobody. Add `excludeConnectorLabels: ["do_not_contact"]`
+  (or `excludeLabels` on the network list) only when the user asks to leave them out.
+
+(WRITES — the host approves each call.)
+
 ---
 
 **Coverage honesty.** Outcome tools return a `telemetry` block — read it before claiming

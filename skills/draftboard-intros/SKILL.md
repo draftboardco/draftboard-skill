@@ -41,6 +41,11 @@ know how complete the answer is. Drop to **thin tools** only when no outcome too
 | **Star / rate a connection** ("star this person", "mark them as a go-to", "rate them 5") | `set_connector_tier` with **`rating` 1–5, higher is better** (5 = ★★★★★ "ask anytime", 1 = ★ "don't ask" — which also hides them; `tier: 0` clears) |
 | **My / a teammate's / the team's LinkedIn connections** ("my connections", "who does Alice know", export a network) | `get_me` → take the id (yours: `customerProfileId`; a teammate's: `teamMembers[].id`; if the name fits several people or none exactly, ask which one) → `list_network_connections` with `ownerIds`, paging until `nextPage` is 0; each row's `owners` says who on the team knows them |
 | **List my starred / closest connections** ("who did I rate 5", "my go-tos") | `list_network_connections` with **`ratings: [5]`** (or `[4,5]`) |
+| **Paths through a group** ("paths to Stripe through our investors", "intros via my close friends") | `find_top_paths` with **`connectorLabels: ["investor"]`** (for one target: `get_target_connections` with `connectorLabels`) |
+| **People in my network by label** ("my investors", "who are my advisors") | `list_network_connections` with `labels` |
+| **How many** ("how many investors do I know?", "how is my network labelled?", "how many haven't I rated?") | `get_label_counts` — one call; then `list_network_connections` with the same filters to see the people |
+| **Label a person** ("mark Anna as a mentor", "she's an investor") | `set_connector_labels` with `{ add: ["mentor"] }` — but "make them a supporter" is a **rating**: `set_connector_tier` |
+| **Label a company** ("Sequoia is an investor", "Acme is a customer") | `find_network_companies` (name → `id`, show every row with its `connectorsCount`) → `set_company_labels` |
 | Hide connections I'd never ask | `set_connector_tier` with `rating: 1` — a rating of 1 hides them |
 | List the ones I already hid | `list_network_connections` with `ratings: [1]` — the rating filter *is* the "Hidden" scope; the default listing omits them |
 | How do these two know each other? (connector ↔ target) | `get_target_connections` / `get_connector_intros` / `find_top_paths` — read `relationships` + `relationshipDetails`, and fall back to `scoreDetails` |
@@ -79,6 +84,12 @@ closest workarounds — is in `references/user-stories.md`. The tool catalog wit
 
 ## How to work
 
+- **Labels say who someone is; the rating says whether to ask them.** Labels (`investor`,
+  `close_friend`, …) are set with `set_connector_labels` / `set_company_labels`; "supporter" is the
+  2–5 star **rating**, never a label write. `do_not_contact` is only a label and hides nobody — leave
+  those people out only when the user asks. A label count of 0 means nobody has been labelled yet,
+  not that the network holds no such people. Before labelling a company, tell the user how many
+  people it will reach (`connectorsCount`). Token list: `references/tools.md` → **Labels**.
 - **`find_top_paths` is one ranked call, not a scan.** It asks the server for the strongest open
   paths — one per target, already excluding paths you've requested — and returns at most `limit`
   (default 20, max 100). Narrow with `accountId`, `tagNames`, `title`, or `ownerIds` to focus the

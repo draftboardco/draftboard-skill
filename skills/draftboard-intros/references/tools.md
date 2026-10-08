@@ -1,6 +1,6 @@
 # Tool catalog
 
-Draftboard's MCP server exposes 24 tools: 6 thin (1:1 with the Integration API), 10 extended,
+Draftboard's MCP server exposes 28 tools: 6 thin (1:1 with the Integration API), 14 extended,
 5 prospecting (BETA discovery), and 3 outcome tools (composed for real jobs). Prefer
 outcome tools.
 
@@ -19,6 +19,9 @@ never walks targets or connections, so it needs no "scope it, it's expensive" ca
 | `accountId` | — | Only targets at one company (an id from `list_accounts`) — scopes the ranking pool to that company |
 | `title` | — | Only targets whose title/position contains this text (case-insensitive) — e.g. "best intros to my Head-of-Sales targets" |
 | `ownerIds` | — | Only paths through these team members — ids from `get_me.customer.teamMembers[]` (match by name) |
+| `connectorLabels` | — | Only paths through a connector carrying these labels, e.g. `["investor"]` — tokens in **Labels** below |
+| `connectorLabelsMatch` | `all` | How several `connectorLabels` combine — `any` = at least one, `all` = every one |
+| `excludeConnectorLabels` | — | Leave out paths through a connector carrying **any** of these labels. Pass `do_not_contact` here only when the user asks to leave those people out |
 | `ratings` | — | Only paths through connectors **you** rated with one of these stars, `2`–`5`, higher is better — `[4,5]` = "paths through people I would actually ask". Your own rating, also with `ownerIds`. Unrated connectors are left out while it is set. `1` is refused: a connector you hid is never a strongest path |
 | `limit` | `20` | Max opportunities returned (1–100) |
 | `includeRankDetails` | `true` | Shared-history reasons (for name-drops) |
@@ -36,7 +39,8 @@ is how many paths matched your filters (before `limit`); `returned` is what came
 `ignoredParameters` is only present when a deprecated arg was passed. Each opportunity:
 `{ introId, targetId, target, targetLinkedinUrl, targetCompany, targetHeadline, targetMaxRank,
 connector, connectorLinkedinUrl, connectorPosition, rank, rankDetails?, relationships?,
-relationshipDetails?, basis, owners[], connectorRating? }`. `connectorRating` is **your** star rating of the
+relationshipDetails?, basis, owners[], connectorRating?, connectorLabels? }`. `connectorLabels` are the
+connector's labels (see **Labels**) — say them when they explain the pick ("Anna — Investor"). `connectorRating` is **your** star rating of the
 connector (1–5, higher is better), absent when you have not rated them — unrated is not a low rating. `targetMaxRank` is kept only for compatibility with
 callers of the old shape — it now always equals that row's own `rank`, since there is exactly one
 path per target; read `rank`. `relationships`/`relationshipDetails` are present only when the API
@@ -97,7 +101,7 @@ Returns `{ total, counted, byStatus{}, byTag{}, truncated }`.
 | `list_targets` | `updatedSince?, tagIds?, tagNames?, tagMatch?, statuses?, accountId?, title?, pageNumber?, resultPerPage?` | `{ targets[], count, nextPage }` — **only targets that already have at least one path**; `accountId` filters to one company (id from `list_accounts`); `title` is a case-insensitive title/position substring |
 | `resolve_target` | `linkedinUrl (required)` | `{ found: true, target }` or `{ found: false, linkedinUrl, note }`. One direct lookup — finds **any** non-archived target, including one just imported with no paths yet. `found: false` is an answer, not an error. |
 | `import_targets` | `linkedinUrls (required), tags?` | `{ imported, notImported, …, note, confirmWith, pathsWith }`. **Accepted, not finished.** The row appears in ~30s — confirm it with `resolve_target`, never with `list_targets` (an empty result there is not a failed import). Paths take minutes; poll `get_target_connections`. |
-| `get_target_connections` | `targetId (required), updatedSince?, ownerIds?, ratings?, pageNumber?, resultPerPage?` | `{ connections[], count, nextPage }` — each connection has `score`, `scoreDetails`, `owners`, `rating` (**your** star rating of the connector, 1–5, higher is better; absent when unrated), and **may** have `relationships` / `relationshipDetails` (see **Field notes**). `ratings` (1–5, e.g. `[4,5]`) keeps only paths through connectors you rated so; `ratings: [1]` returns the ones you hid |
+| `get_target_connections` | `targetId (required), updatedSince?, ownerIds?, ratings?, connectorLabels?, connectorLabelsMatch?, excludeConnectorLabels?, pageNumber?, resultPerPage?` | `{ connections[], count, nextPage }` — each connection has `score`, `scoreDetails`, `owners`, `rating` (**your** star rating of the connector, 1–5, higher is better; absent when unrated), and **may** have `relationships` / `relationshipDetails` (see **Field notes**). `ratings` (1–5, e.g. `[4,5]`) keeps only paths through connectors you rated so; `ratings: [1]` returns the ones you hid. Each connection carries its `labels`; the three label args filter as on `find_top_paths` |
 | `list_accounts` | `query?, connectionDegree?, pageNumber?, resultPerPage?` | `{ accounts[ {id, name, targetsCount, firstDegreeCount, secondDegreeCount, pathsCount} ], count, nextPage }`. Company search: pass a company name as `query`, take the account `id` from the result. |
 
 **Tag types.** A tag's `type` is only ever `manual` — a label the customer created and applied (import, attach-tags, campaign names) — or `automatic` — a marker Draftboard stamps on a whole ingested batch, usually the date (e.g. `20-Apr-2026`). There is **no queryable `icp` tag type** (`?type=icp` is rejected); aim at an "ICP" group by its tag **name**, not a type.
@@ -112,9 +116,13 @@ Returns `{ total, counted, byStatus{}, byTag{}, truncated }`.
 
 | Tool | Args | Notes |
 |------|------|-------|
-| `list_network_connections` | `ownerIds?, query?, preferred?, ratings?, tiers?, pageNumber?, resultPerPage?` | Read-only. **The team's network** — the people it can ask for intros. **`ownerIds`** (ids from `get_me`: yours = `customerProfileId`, a teammate's = `teamMembers[].id`, up to 50) returns **exactly the LinkedIn 1st-degree connections** of those members, nobody else — this is how you list or export "my connections" / "Alice's connections"; pass every member for the whole team. Without `ownerIds` you get the team's combined list, which is broader than LinkedIn (people added by hand as supporters, colleagues inferred from shared employers, the members themselves). Each row carries **`owners`** — who on the team knows that person (always the whole team, never narrowed by `ownerIds`; `[]` = nobody). 100 per page at most: page until `nextPage` is 0 and say how many you read. Resolve a name to an id from `get_me` yourself; if it fits several members or none exactly, ask the user which one. **SEARCH BY RATING**: each returned row carries your personal star **`rating` 1..5 — higher is better** (5 = ★★★★★ "ask anytime", 1 = ★ "don't ask"), absent when unreviewed, plus `tier`, the same setting spelled as the raw wire number (1..5, **lower is better**: tier 1 = "ask anytime", tier 5 = "don't ask"). Filter with `ratings` — **`[5]` (or `[4,5]`) is "my closest connections"**. `tiers` is the same filter on the wire scale, and the two are **unioned, not intersected**. **`ratings: [1]` doubles as the "Hidden" scope:** a connector rated 1 is hidden from the default listing, and asking for `[1]` is the only way to list them — there is no separate hidden flag. *(Team exception: a connector YOU rated 1 still appears in your default listing while a teammate keeps them visible, carrying your own `rating: 1`. With `ownerIds`, hidden means each listed member's own choice: people a teammate hid are left out of that teammate's list.)* To **set** a rating, use `set_connector_tier`; `preferred` is a legacy filter, see **Legacy toggles** below. |
+| `list_network_connections` | `ownerIds?, query?, preferred?, ratings?, tiers?, labels?, labelsMatch?, excludeLabels?, pageNumber?, resultPerPage?` | Read-only. **The team's network** — the people it can ask for intros. **`ownerIds`** (ids from `get_me`: yours = `customerProfileId`, a teammate's = `teamMembers[].id`, up to 50) returns **exactly the LinkedIn 1st-degree connections** of those members, nobody else — this is how you list or export "my connections" / "Alice's connections"; pass every member for the whole team. Without `ownerIds` you get the team's combined list, which is broader than LinkedIn (people added by hand as supporters, colleagues inferred from shared employers, the members themselves). Each row carries **`owners`** — who on the team knows that person (always the whole team, never narrowed by `ownerIds`; `[]` = nobody). 100 per page at most: page until `nextPage` is 0 and say how many you read. Resolve a name to an id from `get_me` yourself; if it fits several members or none exactly, ask the user which one. **SEARCH BY RATING**: each returned row carries your personal star **`rating` 1..5 — higher is better** (5 = ★★★★★ "ask anytime", 1 = ★ "don't ask"), absent when unreviewed, plus `tier`, the same setting spelled as the raw wire number (1..5, **lower is better**: tier 1 = "ask anytime", tier 5 = "don't ask"). Filter with `ratings` — **`[5]` (or `[4,5]`) is "my closest connections"**. `tiers` is the same filter on the wire scale, and the two are **unioned, not intersected**. **`ratings: [1]` doubles as the "Hidden" scope:** a connector rated 1 is hidden from the default listing, and asking for `[1]` is the only way to list them — there is no separate hidden flag. *(Team exception: a connector YOU rated 1 still appears in your default listing while a teammate keeps them visible, carrying your own `rating: 1`. With `ownerIds`, hidden means each listed member's own choice: people a teammate hid are left out of that teammate's list.)* To **set** a rating, use `set_connector_tier`; `preferred` is a legacy filter, see **Legacy toggles** below. **BY LABEL**: each row carries `labels`; filter with `labels` (+ `labelsMatch` `all`\|`any`, default `all`) and `excludeLabels` — see **Labels** below. |
+| `get_label_counts` | the filters of `list_network_connections` (same names) | Read-only. **Counts, not people**: `{ total, unrated, ratings[{rating,count}], labels[{label,scope,count}], zeroLabels[] }` in one cheap call — "how many investors do I know?", "how is my network labelled?", "how many haven't I rated?". Each section ignores its own filter: a label's count is what `list_network_connections` with `labels: [that label]` plus your other filters would return, and `ratings`/`unrated` ignore the rating filters; `total` applies every filter and equals that list's `count`. To see the people, call `list_network_connections` with the same filters. |
+| `find_network_companies` | `query?, labels?, labelsMatch?, pageNumber?, resultPerPage?` | Read-only. Companies where people in the network **currently** work, by name and/or company label: `{ companies[ {id, name, connectorsCount, labels[]} ], count, nextPage }`. `connectorsCount` = how many people a company label would reach. The `id` is what `set_company_labels` takes — **not** an account id from `list_accounts`. One employer can come back as several rows (different spellings or records), each with its own count. |
 | `get_connector_intros` | `connectorId (required), pageNumber?, resultPerPage?` | Connector-first: who this person can introduce you to. `connectorId` = a connection's `connectorId` (not its `id`) or a supporter's `id`. Each item carries `score` + `scoreDetails` and may also carry `relationships` / `relationshipDetails` (see **Field notes**). The response's `connector` object carries your star `rating` (1..5, higher is better). |
 | `set_connector_tier` ⚠ | `connectorId, rating (1–5)` **or** `tier (0–5)` — exactly one | **SET THE STARS — rate / prioritize a supporter.** `rating` is the star scale, **higher is better**: `5` = ★★★★★ "ask anytime" (closest) down to `1` = ★ "don't ask", with `4`, `3` and `2` in between — **and `rating: 1` also hides the connector** from the default listings. `tier` is the same setting spelled as the raw wire number, where **lower is better** (1 = "ask anytime" … 5 = "don't ask", 0 = clear); it still works and is not deprecated. Send **exactly one** of the two — both, or neither, is rejected. There is no `rating: 0`: **clearing a rating stays `tier: 0`**. `connectorId` = a connection's `connectorId` (not its `id`) / a supporter's `id`. Read back via `list_network_connections` (`rating` field / `ratings` filter). Does **not** touch the legacy `preferred` flag. |
+| `set_connector_labels` ⚠ | `connectorId, add?, remove?` | Label ONE person: `{ "add": ["investor"] }`. `connectorId` as for `set_connector_tier`. Settable: org `investor`, `customer`, `advisor`, `partner`, `do_not_contact`; personal `close_friend`, `family`, `mentor`. Adding a label already there, or removing one that is not, changes nothing. |
+| `set_company_labels` ⚠ | `companyId, add?, remove?` | Label a COMPANY, so everyone in the network who currently works there carries it. Settable: `investor`, `customer`, `partner`, `do_not_contact` (all org). `companyId` comes from `find_network_companies` only — an account id is refused. |
 | `import_supporters` ⚠ | `linkedinUrls (1–100)` | Add supporters by URL. |
 | `attach_tags_to_targets` ⚠ | `targetIds (1+)`, and ≥1 of `tagIds` / `tagNames` | Tag one/many targets; all-or-nothing. |
 | `set_intro_status` ⚠ | `introId, status (requested\|completed\|declined), reasonId?, customReason?` | Drive an intro's lifecycle. |
@@ -185,6 +193,27 @@ about where the user works, and a shared `employment.company` is *their* shared 
 user's. Use them only for the warm line about that specific intro; never present them as facts
 about the user. The teammate↔connector tie (`owners[].score`) is a strength number only — no
 shared-history reason is exposed for it, so don't invent one.
+
+## Labels
+
+A label says **who someone is to the customer**. Tokens, lowercase:
+
+| Kind | Tokens | Who sees it | Set with |
+|------|--------|-------------|----------|
+| Org | `investor`, `customer`, `advisor`, `partner`, `do_not_contact` | The whole team, with who set it | `set_connector_labels`, or `set_company_labels` (all but `advisor`) |
+| Personal | `close_friend`, `family`, `mentor` | Only the caller | `set_connector_labels` |
+| Supporter | `supporter` | Only the caller | **Not a label write** — it is the caller's 2–5 star rating: `set_connector_tier` |
+| Automatic | `current_colleague`, `former_colleague`, `university_classmate` | Everyone | Nobody — derived from work and school history; cannot be set or removed |
+
+- **`do_not_contact` is a plain label.** It marks the person and hides nobody. Leave those people
+  out (`excludeLabels` / `excludeConnectorLabels`) only when the user asks to.
+- **A count of 0 is "nobody labelled yet", not "you know no investors".** Labels are only what the
+  team has set. Say so, and offer to label people.
+- **Label a company in three steps.** `find_network_companies` with the name → show the user
+  **every** matching row with its `connectorsCount` (one employer can appear as several rows) and
+  say how many people the label will reach → `set_company_labels` once per row they pick.
+- **Personal labels and `supporter` are the caller's own,** also when reading a teammate's network
+  with `ownerIds`: "Family" there is *your* label, not the teammate's.
 
 ## Prospecting — company-first discovery (⚠ BETA)
 
