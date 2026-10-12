@@ -20,8 +20,8 @@
  *   exit: 0 clean, 1 on any violation.
  */
 
-import { readdirSync, statSync, readFileSync } from 'node:fs';
-import { join, relative, resolve } from 'node:path';
+import { readdirSync, statSync, readFileSync, existsSync } from 'node:fs';
+import { join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = join(fileURLToPath(new URL('.', import.meta.url)), '..');
@@ -273,6 +273,17 @@ const LINE_RULES = [
     why: 'No internal history about rows written before a cutoff.',
     re: rx('\\b(rows?|records?|pairs?|connections?|ratings?|tiers?)\\s+(created|written|set|added|stamped)\\s+before\\b'),
   },
+
+  /* ---- RULE 4: no beta / trial framing in the skill ------------- */
+  // The skill ships inside the package OpenAI reviews, and its guidelines reject
+  // plugins presented as beta or trial versions. The server's tools dropped that
+  // framing; the skill must not bring it back. README is repo-facing, not shipped.
+  {
+    id: 'beta-framing',
+    why: 'The skill ships in the reviewed plugin package — no beta / trial framing.',
+    re: rx('\\b(beta|trial version|preview release|experimental)\\b'),
+    only: 'skills/',
+  },
 ];
 
 /* ------------------------------------------------------------------ *
@@ -449,6 +460,75 @@ function checkManifests() {
   if (fromMcp && fromMarket && fromMcp !== fromMarket) {
     problems.push('the two manifests disagree on the server address: mcp.json says ' + fromMcp + ', marketplace.json says ' + fromMarket);
   }
+  return problems.concat(checkOpenAiListing(read));
+}
+
+/* ------------------------------------------------------------------ *
+ * OpenAI directory listing
+ *
+ * `plugin.json` → `extensions.com.openai` is what the OpenAI plugin portal
+ * reads on upload (developers.openai.com/plugins/deploy/submission). The
+ * portal rejects an over-long field or a missing asset only after the ZIP is
+ * uploaded, so the same limits are checked here, where CI sees them first.
+ * ------------------------------------------------------------------ */
+const OPENAI_TEXT_LIMITS = { displayName: 30, shortDescription: 30, longDescription: 4000, developerName: 80 };
+const OPENAI_REQUIRED_URLS = ['websiteURL', 'supportURL', 'privacyPolicyURL', 'termsOfServiceURL'];
+const OPENAI_URL_MAX = 1024;
+const OPENAI_PROMPTS_MAX = 3;
+const OPENAI_PROMPT_MAX_CHARS = 128;
+const OPENAI_POSITIVE_CASES = 5;
+const OPENAI_NEGATIVE_CASES = 3;
+
+function checkOpenAiListing(read) {
+  const plugin = read('plugin.json');
+  if (plugin.__error) return [plugin.__error];
+
+  const openai = plugin?.extensions?.['com.openai'];
+  if (!openai) return ['plugin.json: no extensions["com.openai"] block (the OpenAI listing)'];
+
+  const at = (field) => 'plugin.json: extensions["com.openai"].' + field;
+  const problems = [];
+  const ui = openai.interface ?? {};
+
+  for (const [field, max] of Object.entries(OPENAI_TEXT_LIMITS)) {
+    const value = ui[field];
+    if (typeof value !== 'string' || !value.trim()) problems.push(at('interface.' + field) + ' is missing');
+    else if (value.length > max) problems.push(at('interface.' + field) + ' is ' + value.length + ' chars, the limit is ' + max);
+  }
+  for (const field of OPENAI_REQUIRED_URLS) {
+    const value = ui[field];
+    if (typeof value !== 'string' || !value.startsWith('https://')) problems.push(at('interface.' + field) + ' must be an https URL');
+    else if (value.length > OPENAI_URL_MAX) problems.push(at('interface.' + field) + ' is longer than ' + OPENAI_URL_MAX + ' chars');
+  }
+
+  const prompts = ui.defaultPrompt ?? [];
+  if (prompts.length > OPENAI_PROMPTS_MAX) problems.push(at('interface.defaultPrompt') + ' has ' + prompts.length + ' prompts, the limit is ' + OPENAI_PROMPTS_MAX);
+  prompts
+    .filter((p) => p.length > OPENAI_PROMPT_MAX_CHARS)
+    .forEach((p) => problems.push(at('interface.defaultPrompt') + ' entry over ' + OPENAI_PROMPT_MAX_CHARS + ' chars: ' + excerpt(p, 60)));
+
+  for (const field of ['logo', 'composerIcon', 'logoDark', 'composerIconDark']) {
+    const path = ui[field];
+    if (path === undefined && (field === 'logoDark' || field === 'composerIconDark')) continue;
+    if (typeof path !== 'string' || !existsSync(join(ROOT, path))) problems.push(at('interface.' + field) + ' does not point at a file in the repo: ' + path);
+  }
+
+  const cases = openai.review?.test_cases ?? {};
+  const positive = cases.positive ?? [];
+  const negative = cases.negative ?? [];
+  if (positive.length !== OPENAI_POSITIVE_CASES) problems.push(at('review.test_cases.positive') + ' has ' + positive.length + ', review needs ' + OPENAI_POSITIVE_CASES);
+  if (negative.length !== OPENAI_NEGATIVE_CASES) problems.push(at('review.test_cases.negative') + ' has ' + negative.length + ', review needs ' + OPENAI_NEGATIVE_CASES);
+  positive.forEach((c, i) => {
+    for (const field of ['description', 'prompt', 'tools_triggered', 'expected_behavior']) {
+      if (typeof c?.[field] !== 'string' || !c[field].trim()) problems.push(at('review.test_cases.positive[' + i + '].' + field) + ' is missing');
+    }
+  });
+  negative.forEach((c, i) => {
+    for (const field of ['description', 'prompt']) {
+      if (typeof c?.[field] !== 'string' || !c[field].trim()) problems.push(at('review.test_cases.negative[' + i + '].' + field) + ' is missing');
+    }
+  });
+
   return problems;
 }
 
@@ -470,6 +550,7 @@ function main() {
     lines.forEach((rawLine, idx) => {
       const line = norm(rawLine);
       for (const rule of LINE_RULES) {
+        if (rule.only && !relative(ROOT, full).split(sep).join('/').startsWith(rule.only)) continue;
         rule.re.lastIndex = 0;
         let m;
         while ((m = rule.re.exec(line)) !== null) {

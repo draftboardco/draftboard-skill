@@ -1,7 +1,7 @@
 # Tool catalog
 
 Draftboard's MCP server exposes 28 tools: 6 thin (1:1 with the Integration API), 14 extended,
-5 prospecting (BETA discovery), and 3 outcome tools (composed for real jobs). Prefer
+5 prospecting (discovery), and 3 outcome tools (composed for real jobs). Prefer
 outcome tools.
 
 ## Outcome tools
@@ -215,7 +215,7 @@ A label says **who someone is to the customer**. Tokens, lowercase:
 - **Personal labels and `supporter` are the caller's own,** also when reading a teammate's network
   with `ownerIds`: "Family" there is *your* label, not the teammate's.
 
-## Prospecting — company-first discovery (⚠ BETA)
+## Prospecting — company-first discovery
 
 A different mode from everything above: instead of working over people you already track, these find
 **new** people by role at named companies. Most of them become targets without a review step; the loop
@@ -225,14 +225,14 @@ for the rest is asynchronous:
 
 | Tool | Args | Notes |
 |------|------|-------|
-| `search_accounts` ⚠ | `companies (1–50)`, `titles (1–20)`, `name?` | BETA. `companies` = domains (`acme.com`) or `linkedin.com/company/…` URLs; `titles` = the persona. Returns `{ campaignId, imported, notImportedAccounts }`. People found are normally added as targets **automatically**, up to a limit per company, and their warm paths are charged; only the ones beyond that limit wait in the pool. Everyone arrives **asynchronously** — there is no completion signal. Not idempotent: every call launches a new search. |
+| `search_accounts` ⚠ | `companies (1–50)`, `titles (1–20)`, `name?` | `companies` = domains (`acme.com`) or `linkedin.com/company/…` URLs; `titles` = the persona. Returns `{ campaignId, imported, notImportedAccounts }`. People found are normally added as targets **automatically**, up to a limit per company, and their warm paths are charged; only the ones beyond that limit wait in the pool. Everyone arrives **asynchronously** — there is no completion signal. Not idempotent: every call launches a new search. |
 | `list_pool` | `campaignId?, accountId?, tagIds?, tagMatch?, query?, minIcpFit?, pageNumber?, resultPerPage?` | Discovered prospects awaiting confirm/reject: `{ prospects[ {id, name, linkedinUrl, headline, accountName, source, tags, icpFits} ], count, nextPage }`. Filter by the `campaignId` from `search_accounts` or `search_supporters` — this is where a supporter search's results arrive. `icpFits` = one `{ campaignId, percent?, reason? }` per supporter search with an `icp` that found this person (only that search's entry when you pass `campaignId`); no `percent` = could not be assessed, not 0; empty = no such search found them. A person fits at `percent` 50 or more — the product's threshold, do not invent others. Never hides anyone; `minIcpFit` (0–100, requires `campaignId`) keeps only people scored at or above it and leaves out the ones that could not be assessed. Empty right after a search = results may not be ready yet; it does not mean the search has finished. |
 | `confirm_pool` ⚠ | `ids (1+)` | Promote pool prospects into targets (idempotent). Every requested id still in the pool is confirmed — nothing is held back. Returns `{ confirmedCount, remainingCapacity }`; `remainingCapacity` is informational, not a limit. After this they're real targets and their warm paths are charged — tell the user before confirming. `find_top_paths` / `list_targets` include them. |
 | `reject_pool` ⚠ | `ids (1+)` | Discard pending pool prospects (soft-delete status-`new`). Idempotent. |
 
 **The loop.** "Find me Heads of Sales at Acme and Globex" → tell the user the people found are normally added as targets automatically and their paths are charged → `search_accounts({ companies: ["acme.com", "globex.com"], titles: ["Head of Sales"] })` once → keep the returned `campaignId` → after a short wait `find_top_paths` / `list_targets` for the ones already added, and `list_pool({ campaignId })` for the ones held back → `confirm_pool` only the `ids` the user wants (charged the same way), `reject_pool` the rest.
 
-### Supporter-first discovery (⚠ BETA)
+### Supporter-first discovery
 
 Finds new people by role **inside the networks of people the user knows**, instead of at named
 companies. Nobody it finds becomes a target on their own: everyone waits in the pool for review, and
@@ -240,7 +240,7 @@ nothing is charged until they are confirmed.
 
 | Tool | Args | Notes |
 |------|------|-------|
-| `search_supporters` ⚠ | `supporters (1+)`, `titles (1+)`, `companies?`, `name?`, `icp?` | BETA. `supporters` = LinkedIn profile URLs (`linkedin.com/in/…`); `titles` = the persona; `companies` = domains or `linkedin.com/company/…` URLs, omit to search the whole network. Returns `{ status, errors, campaignId, importedSupporters, notImportedSupporters }` — `importedSupporters` counts the supporters accepted, not people found. **Everyone found waits in the pool** — launching charges nothing. Someone rejected earlier stays rejected. People arrive **over time** — no completion signal. Not idempotent: every call launches a new search. Does not change anyone's rating. `icp` = `{ industry?, companySize?, location?, description? }`, at least one filled, each ≤ 500 characters: the user's ideal customer, taken only from what they said. Everyone found is then scored for fit (`icpFits` on `list_pool`); nobody is hidden. Refused together with `companies`. |
+| `search_supporters` ⚠ | `supporters (1+)`, `titles (1+)`, `companies?`, `name?`, `icp?` | `supporters` = LinkedIn profile URLs (`linkedin.com/in/…`); `titles` = the persona; `companies` = domains or `linkedin.com/company/…` URLs, omit to search the whole network. Returns `{ status, errors, campaignId, importedSupporters, notImportedSupporters }` — `importedSupporters` counts the supporters accepted, not people found. **Everyone found waits in the pool** — launching charges nothing. Someone rejected earlier stays rejected. People arrive **over time** — no completion signal. Not idempotent: every call launches a new search. Does not change anyone's rating. `icp` = `{ industry?, companySize?, location?, description? }`, at least one filled, each ≤ 500 characters: the user's ideal customer, taken only from what they said. Everyone found is then scored for fit (`icpFits` on `list_pool`); nobody is hidden. Refused together with `companies`. |
 
 **The loop.** Launch it once and keep the `campaignId` → check back later with
 `list_pool({ campaignId })` (empty soon after = may not be ready yet, not finished) → **before `confirm_pool`**, tell the

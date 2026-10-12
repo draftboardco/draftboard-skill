@@ -95,14 +95,14 @@ connection, already pointed at the right address.
 /plugin install draftboard@draftboard
 ```
 
-**Codex / ChatGPT** — install this repository as a plugin from the Plugins surface; the same
-`skills/` folder and the same server address are picked up from `plugin.json` and `mcp.json`.
+**Codex** — install this repository as a plugin from the Plugins surface; the same `skills/`
+folder and the same server address are picked up from `plugin.json` and `mcp.json`.
 
 Then approve the connection in your browser — the one step nothing can do for you — and ask:
 *"Use Draftboard to show me my top intro opportunities."*
 
-Updates arrive on their own: the plugin follows this repository, so a correction we ship is simply
-there the next time your assistant starts.
+Updates arrive on their own: an install from this repository follows it, so a correction we ship
+is simply there the next time your assistant starts.
 
 <details>
 <summary>Prefer to set it up by hand (or on Claude Desktop / Codex)?</summary>
@@ -147,7 +147,7 @@ then stop and tell them it's ready:*
    `claude mcp add --transport http draftboard https://mcp.draftboard.com`; on Codex CLI,
    `codex mcp add draftboard --url https://mcp.draftboard.com`. There is no key and no environment
    block: do not ask the user for one.
-2. **Install the skill.** Copy the `draftboard-intros/` folder from this repo into the user's skills
+2. **Install the skill.** Copy the `skills/draftboard-intros/` folder from this repo into the user's skills
    directory — `~/.claude/skills/draftboard-intros/` for Claude Code,
    `~/.codex/skills/draftboard-intros/` for Codex CLI (both load the same `SKILL.md`). If you don't
    have the files locally, clone `https://github.com/draftboardco/draftboard-skill` first.

@@ -2,5 +2,97 @@
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "draftboard",
   "version": "1.0.0",
-  "description": "Warm introductions from your own network, inside your assistant: who can introduce you to a prospect, how strong the connection is, and what to say."
+  "description": "Warm introductions from your own network, inside your assistant: who can introduce you to a prospect, how strong the connection is, and what to say.",
+  "author": {
+    "name": "Draftboard",
+    "url": "https://draftboard.com"
+  },
+  "homepage": "https://www.draftboard.com/mcp",
+  "repository": "https://github.com/draftboardco/draftboard-skill",
+  "license": "MIT",
+  "keywords": ["warm introductions", "sales", "prospecting", "networking", "linkedin"],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Draftboard",
+        "shortDescription": "Warm intros from your network",
+        "longDescription": "Draftboard finds the warm introduction to the person you want to reach. Ask who can introduce you to a prospect, and you get the people in your own network who know them, how strong each relationship is on a 0-100 scale, and the shared history behind it, such as years at the same company or the same school.\n\nUse it to see your best introduction opportunities right now, check whether you are already connected to someone, review every path to one prospect, see which of your saved prospects a teammate can reach, and track how your introductions are going. You can also rate the people you would ask for an introduction, label who they are to you, and save new prospects from LinkedIn.\n\nDraftboard works only on the data in your own Draftboard account, and every answer says how much of it was checked. Sign-in happens in your browser and can be revoked at any time from Settings, Connected apps. A Draftboard account with a scanned network is required.",
+        "developerName": "Draftboard",
+        "category": "Productivity",
+        "capabilities": [
+          "Find warm introduction paths",
+          "Check existing connections",
+          "Track introduction progress",
+          "Rate and label connections"
+        ],
+        "websiteURL": "https://www.draftboard.com/mcp",
+        "supportURL": "https://draftboard.com/contact",
+        "privacyPolicyURL": "https://draftboard.com/privacy",
+        "termsOfServiceURL": "https://draftboard.com/terms",
+        "defaultPrompt": [
+          "What are my best warm intro opportunities right now?",
+          "Who can introduce me to one of my saved prospects?",
+          "How are my introductions going?"
+        ],
+        "brandColor": "#5B44E8",
+        "composerIcon": "./assets/logo.png",
+        "logo": "./assets/logo.png"
+      },
+      "review": {
+        "test_cases": {
+          "positive": [
+            {
+              "description": "Identify the connected account",
+              "prompt": "Which Draftboard account am I connected to?",
+              "tools_triggered": "get_me",
+              "expected_behavior": "Names the demo account's customer and user, and lists its team members if it has any."
+            },
+            {
+              "description": "Best introduction opportunities",
+              "prompt": "What are my best warm intro opportunities right now?",
+              "tools_triggered": "find_top_paths",
+              "expected_behavior": "Returns a ranked list of prospects, each with the connection who can introduce them, a 0-100 strength score and the shared history behind it, and says how many prospects it checked."
+            },
+            {
+              "description": "Every path to one prospect",
+              "prompt": "Pick one of my saved prospects and show me everyone who can introduce me to them.",
+              "tools_triggered": "list_targets, get_target_connections",
+              "expected_behavior": "Names one saved prospect from the demo account and lists the connections who can introduce the user, strongest first, with each relationship's score."
+            },
+            {
+              "description": "Introduction progress",
+              "prompt": "How are my introductions going?",
+              "tools_triggered": "intro_status_overview",
+              "expected_behavior": "Summarises the account's prospects by status (new, completed, stopped) with a count for each."
+            },
+            {
+              "description": "Rate a connection",
+              "prompt": "Find the connection behind my strongest intro path and give them 5 stars - I'd ask them anytime.",
+              "tools_triggered": "find_top_paths, set_connector_tier",
+              "expected_behavior": "Names the connection, sets their rating to 5 stars, and confirms the change. The rating is visible afterwards in the Draftboard app."
+            }
+          ],
+          "negative": [
+            {
+              "description": "Sending messages on the user's behalf",
+              "prompt": "Send a LinkedIn message to my best connection asking them to introduce me."
+            },
+            {
+              "description": "Buying credits inside the chat",
+              "prompt": "Buy more Draftboard credits for me."
+            },
+            {
+              "description": "Another company's data",
+              "prompt": "Show me the warm intro paths in Acme Corp's Draftboard account."
+            }
+          ]
+        },
+        "commerce": false,
+        "commerce_description": "Draftboard does not sell anything inside ChatGPT. Usage is billed to the customer's existing Draftboard account on draftboard.com."
+      },
+      "publication": {
+        "release_notes": "Initial release: find warm introduction paths, check existing connections, review every path to a prospect, rate and label connections, and track introduction progress."
+      }
+    }
+  }
 }
