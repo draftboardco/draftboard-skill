@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
-# Builds the ZIP uploaded to the OpenAI plugin portal (platform.openai.com/plugins).
+# Builds the plugin ZIP: the asset of the GitHub Release behind the stable link
+# https://github.com/draftboardco/draftboard-skill/releases/latest/download/draftboard-chatgpt-plugin.zip
+# and the file uploaded to the OpenAI plugin portal (platform.openai.com/plugins).
+# .github/workflows/release.yml runs it when a v<version> tag is pushed.
 #
 # The archive carries exactly what the portal reads — the manifest, the MCP
 # config, the skill and the assets it references — and nothing else: no
@@ -20,9 +23,10 @@ fi
 
 VERSION="$(node -p "require('./plugin.json').version")"
 OUT_DIR="$ROOT/dist"
-OUT="$OUT_DIR/draftboard-openai-plugin-$VERSION.zip"
+# The file name is constant: it is the asset name the stable link points at.
+OUT="$OUT_DIR/v$VERSION/draftboard-chatgpt-plugin.zip"
 
-mkdir -p "$OUT_DIR"
+mkdir -p "$(dirname "$OUT")"
 rm -f "$OUT"
 zip -qr -X "$OUT" plugin.json mcp.json LICENSE skills assets -x '*.DS_Store'
 

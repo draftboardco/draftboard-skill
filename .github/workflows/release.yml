@@ -1,0 +1,54 @@
+name: release
+
+# Pushing a tag v<version> publishes the plugin ZIP as the asset of a GitHub
+# Release marked "latest", so the stable link
+#   https://github.com/draftboardco/draftboard-skill/releases/latest/download/draftboard-chatgpt-plugin.zip
+# serves the new version. The tag must match plugin.json version; the build
+# script refuses anything else (see RELEASING.md in the private wrapper repo).
+on:
+  push:
+    tags: ['v[0-9]+.[0-9]+.[0-9]+']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The release check compares against every v* / openai-v* tag.
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Tag matches plugin.json version
+        run: |
+          VERSION="$(node -p "require('./plugin.json').version")"
+          if [[ "$GITHUB_REF_NAME" != "v$VERSION" ]]; then
+            echo "::error title=Plugin release::tag $GITHUB_REF_NAME does not match plugin.json version $VERSION"
+            exit 1
+          fi
+      - name: Build the ZIP
+        run: scripts/build-openai-zip.sh
+      - name: Publish the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ZIP="dist/$GITHUB_REF_NAME/draftboard-chatgpt-plugin.zip"
+          NOTES="$(node -p "require('./plugin.json').extensions['com.openai'].publication.release_notes")"
+          # Re-running the job replaces the asset instead of failing on an existing release.
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" "$ZIP" --clobber
+            gh release edit "$GITHUB_REF_NAME" --latest
+          else
+            gh release create "$GITHUB_REF_NAME" "$ZIP" --verify-tag --latest \
+              --title "Draftboard plugin ${GITHUB_REF_NAME#v}" --notes "$NOTES"
+          fi
+      - name: The stable link serves this version
+        run: |
+          URL="https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/draftboard-chatgpt-plugin.zip"
+          curl -fsSL "$URL" -o latest.zip
+          cmp latest.zip "dist/$GITHUB_REF_NAME/draftboard-chatgpt-plugin.zip"
+          echo "$URL serves $GITHUB_REF_NAME"

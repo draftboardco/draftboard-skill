@@ -13,12 +13,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          # check-openai-release.mjs diffs against the openai-v* tags.
+          # check-openai-release.mjs diffs against the v* and openai-v* tags.
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
       - name: Check docs vocabulary
         run: node scripts/check-docs.mjs
-      - name: Check the ChatGPT listing is not behind
+      - name: Check the download ZIP and the ChatGPT listing are not behind
         run: node scripts/check-openai-release.mjs

@@ -1,19 +1,24 @@
 #!/usr/bin/env node
-// Compares what the OpenAI plugin ZIP would carry with what was last published
-// to the ChatGPT plugin directory.
+// Compares what the plugin ZIP would carry with what was last released, on the
+// two channels that do not follow this repository the way a Claude / Codex
+// install does:
 //
-// The directory keeps the skill and the listing from the last uploaded ZIP; it
-// does not follow this repository the way a Claude / Codex install does. Every
-// publish is marked by a git tag `openai-v<version>` on the commit that was
-// zipped, so "what is live in ChatGPT" is always a git question.
+//   download  tag `v<version>`, a GitHub Release whose asset is the ZIP behind
+//             the stable link .../releases/latest/download/draftboard-chatgpt-plugin.zip
+//             (created by .github/workflows/release.yml when the tag is pushed)
+//   ChatGPT   tag `openai-v<version>`, on the same commit, once that ZIP is
+//             published in the ChatGPT plugin directory
 //
-//   node scripts/check-openai-release.mjs            report mode (CI): warns when
-//                                                    the listing is behind, never fails
+// So "what can people download" and "what is live in ChatGPT" are git questions.
+//
+//   node scripts/check-openai-release.mjs            report mode (CI): warns when a
+//                                                    channel is behind, never fails
 //                                                    on that alone
 //   node scripts/check-openai-release.mjs --release  gate before building a ZIP to
-//                                                    upload: fails unless the release
+//                                                    release: fails unless the release
 //                                                    files are committed and the
-//                                                    version is new
+//                                                    version is new (or already
+//                                                    released from this very commit)
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -22,7 +27,11 @@ import { fileURLToPath } from 'node:url';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 // Keep in step with the zip line in build-openai-zip.sh.
 const RELEASE_PATHS = ['plugin.json', 'mcp.json', 'LICENSE', 'skills', 'assets'];
-const TAG_PREFIX = 'openai-v';
+const CHANNELS = [
+  { name: 'Download ZIP', prefix: 'v', action: 'push the tag v<version> to publish a new GitHub Release' },
+  { name: 'ChatGPT listing', prefix: 'openai-v', action: 'upload and publish a new ZIP in the OpenAI portal' },
+];
+const [DOWNLOAD, CHATGPT] = CHANNELS;
 const SEMVER = /^(\d+)\.(\d+)\.(\d+)$/;
 
 const isReleaseMode = process.argv.includes('--release');
@@ -46,11 +55,12 @@ function compareVersions(a, b) {
   return 0;
 }
 
-function publishedVersions() {
-  return git('tag', '--list', `${TAG_PREFIX}*`)
+// Only plain X.Y.Z counts: the old v1.0.0-alpha.* pre-releases are ignored.
+function publishedVersions(prefix) {
+  return git('tag', '--list', `${prefix}*`)
     .split('\n')
     .filter(Boolean)
-    .map((tag) => tag.slice(TAG_PREFIX.length))
+    .map((tag) => tag.slice(prefix.length))
     .filter((version) => parseVersion(version))
     .sort(compareVersions);
 }
@@ -65,12 +75,16 @@ function uncommitted() {
   return out ? out.split('\n') : [];
 }
 
-function warn(message) {
-  console.log(isCi ? `::warning title=ChatGPT listing::${message}` : `WARNING: ${message}`);
+function commitOf(ref) {
+  return git('rev-list', '-n', '1', ref);
+}
+
+function warn(title, message) {
+  console.log(isCi ? `::warning title=${title}::${message}` : `WARNING (${title}): ${message}`);
 }
 
 function fail(message) {
-  console.error(isCi ? `::error title=ChatGPT listing::${message}` : `ERROR: ${message}`);
+  console.error(isCi ? `::error title=Plugin release::${message}` : `ERROR: ${message}`);
   process.exit(1);
 }
 
@@ -79,38 +93,51 @@ if (!parseVersion(version)) {
   fail(`plugin.json version "${version}" is not plain MAJOR.MINOR.PATCH.`);
 }
 
-const published = publishedVersions();
-const latest = published.at(-1);
-
-if (latest && compareVersions(version, latest) < 0) {
-  fail(`plugin.json version ${version} is lower than the published ${TAG_PREFIX}${latest}.`);
+const published = Object.fromEntries(CHANNELS.map((c) => [c.prefix, publishedVersions(c.prefix)]));
+for (const channel of CHANNELS) {
+  const latest = published[channel.prefix].at(-1);
+  if (latest && compareVersions(version, latest) < 0) {
+    fail(`plugin.json version ${version} is lower than the released ${channel.prefix}${latest}.`);
+  }
 }
 
-if (isReleaseMode) {
+function checkRelease() {
   const dirty = uncommitted();
   if (dirty.length) {
     fail(`commit these first, the tag must point at what was zipped:\n${dirty.join('\n')}`);
   }
-  if (published.includes(version)) {
-    fail(`${TAG_PREFIX}${version} is already published; bump plugin.json version.`);
+  if (published[CHATGPT.prefix].includes(version)) {
+    fail(`${CHATGPT.prefix}${version} is already published to ChatGPT; bump plugin.json version.`);
   }
-  console.log(`OK: ${version} is new (last published: ${latest ? TAG_PREFIX + latest : 'none'}).`);
-  process.exit(0);
+  // A released version is immutable: rebuilding it is fine only from the commit it was tagged on.
+  if (published[DOWNLOAD.prefix].includes(version) && commitOf(`${DOWNLOAD.prefix}${version}`) !== commitOf('HEAD')) {
+    fail(`${DOWNLOAD.prefix}${version} is already released from another commit; bump plugin.json version.`);
+  }
+  const latest = published[DOWNLOAD.prefix].at(-1);
+  console.log(`OK: ${version} can be released (last download release: ${latest ? DOWNLOAD.prefix + latest : 'none'}).`);
 }
 
-if (!latest) {
-  console.log('ChatGPT listing: nothing published yet (no openai-v* tag).');
-  process.exit(0);
+function report(channel) {
+  const latest = published[channel.prefix].at(-1);
+  if (!latest) {
+    console.log(`${channel.name}: nothing released yet (no ${channel.prefix}X.Y.Z tag).`);
+    return;
+  }
+  const changed = changedSince(`${channel.prefix}${latest}`);
+  if (!changed.length) {
+    console.log(`${channel.name}: up to date with ${channel.prefix}${latest}.`);
+    return;
+  }
+  const bumpNote = version === latest ? ` plugin.json is still ${version}: bump it first.` : '';
+  warn(
+    channel.name,
+    `${changed.length} release file(s) changed since ${channel.prefix}${latest}; to ship them, ${channel.action} ` +
+      `(see RELEASING.md).${bumpNote} Changed: ${changed.join(', ')}`,
+  );
 }
 
-const changed = changedSince(`${TAG_PREFIX}${latest}`);
-if (!changed.length) {
-  console.log(`ChatGPT listing: up to date with ${TAG_PREFIX}${latest}.`);
-  process.exit(0);
+if (isReleaseMode) {
+  checkRelease();
+} else {
+  CHANNELS.forEach(report);
 }
-
-const bumpNote = version === latest ? ` plugin.json is still ${version}: bump it before the upload.` : '';
-warn(
-  `${changed.length} release file(s) changed since ${TAG_PREFIX}${latest}; ChatGPT still serves the old ` +
-    `skill until a new ZIP is uploaded and published.${bumpNote} Changed: ${changed.join(', ')}`,
-);
