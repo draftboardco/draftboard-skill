@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "draftboard",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Warm introductions from your own network, inside your assistant: who can introduce you to a prospect, how strong the connection is, and what to say.",
   "author": {
     "name": "Draftboard",
@@ -18,7 +18,7 @@
         "shortDescription": "Warm intros from your network",
         "longDescription": "Draftboard finds the warm introduction to the person you want to reach. Ask who can introduce you to a prospect, and you get the people in your own network who know them, how strong each relationship is on a 0-100 scale, and the shared history behind it, such as years at the same company or the same school.\n\nUse it to see your best introduction opportunities right now, check whether you are already connected to someone, review every path to one prospect, see which of your saved prospects a teammate can reach, and track how your introductions are going. You can also rate the people you would ask for an introduction, label who they are to you, and save new prospects from LinkedIn.\n\nDraftboard works only on the data in your own Draftboard account, and every answer says how much of it was checked. Sign-in happens in your browser and can be revoked at any time from Settings, Connected apps. A Draftboard account with a scanned network is required.",
         "developerName": "Draftboard",
-        "category": "Productivity",
+        "category": "Business & Operations",
         "capabilities": [
           "Find warm introduction paths",
           "Check existing connections",
