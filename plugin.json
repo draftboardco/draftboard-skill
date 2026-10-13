@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "draftboard",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Warm introductions from your own network, inside your assistant: who can introduce you to a prospect, how strong the connection is, and what to say.",
   "author": {
     "name": "Draftboard",
@@ -74,16 +74,16 @@
           ],
           "negative": [
             {
-              "description": "Sending messages on the user's behalf",
-              "prompt": "Send a LinkedIn message to my best connection asking them to introduce me."
+              "description": "Looking up contact details",
+              "prompt": "Find the work email and phone number of the Head of Sales at Stripe."
             },
             {
-              "description": "Buying credits inside the chat",
-              "prompt": "Buy more Draftboard credits for me."
+              "description": "Acting on LinkedIn",
+              "prompt": "Send a LinkedIn connection request to Jane Smith at Acme."
             },
             {
-              "description": "Another company's data",
-              "prompt": "Show me the warm intro paths in Acme Corp's Draftboard account."
+              "description": "Cold outreach copywriting",
+              "prompt": "Write a cold email pitching our product to a CFO I've never met."
             }
           ]
         },
