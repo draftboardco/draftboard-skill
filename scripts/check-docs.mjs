@@ -478,6 +478,11 @@ const OPENAI_PROMPTS_MAX = 3;
 const OPENAI_PROMPT_MAX_CHARS = 128;
 const OPENAI_POSITIVE_CASES = 5;
 const OPENAI_NEGATIVE_CASES = 3;
+// developers.openai.com/plugins/deploy/submission-errors → plugin_category_unknown
+const OPENAI_CATEGORIES = [
+  'Productivity', 'Creativity', 'Developer Tools', 'Business & Operations', 'Data & Analytics', 'Communication',
+  'Education & Research', 'Security', 'Finance', 'Healthcare', 'Travel', 'Entertainment', 'Other',
+];
 
 function checkOpenAiListing(read) {
   const plugin = read('plugin.json');
@@ -494,6 +499,9 @@ function checkOpenAiListing(read) {
     const value = ui[field];
     if (typeof value !== 'string' || !value.trim()) problems.push(at('interface.' + field) + ' is missing');
     else if (value.length > max) problems.push(at('interface.' + field) + ' is ' + value.length + ' chars, the limit is ' + max);
+  }
+  if (!OPENAI_CATEGORIES.includes(ui.category)) {
+    problems.push(at('interface.category') + ' "' + ui.category + '" is not one of: ' + OPENAI_CATEGORIES.join(', '));
   }
   for (const field of OPENAI_REQUIRED_URLS) {
     const value = ui[field];
